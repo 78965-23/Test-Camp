@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Admin Panel</title>
+  <link rel="stylesheet" href="style.css" />
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+</head>
+<body>
+  <nav class="navbar">...</nav>
+  <section class="admin-section">
+    <div class="container">
+      <div id="loginDiv">
+        <h2>Admin Login</h2>
+        <form id="loginForm">
+          <div class="form-group">
+            <label>Password</label>
+            <input type="password" id="passwordInput" class="form-control" placeholder="Enter password" required />
+          </div>
+          <button type="submit" class="btn btn-primary">Login</button>
+        </form>
+        <p id="loginError" style="color:red; display:none;">Invalid password.</p>
+      </div>
+
+      <div id="dashboardDiv" style="display:none;">
+        <h2>Admin Dashboard</h2>
+        <div class="stats-grid" id="statsGrid">
+          <div class="stat-card"><h4>Total</h4><p id="totalStat">0</p></div>
+          <div class="stat-card"><h4>Pending</h4><p id="pendingStat">0</p></div>
+          <div class="stat-card"><h4>Approved</h4><p id="approvedStat">0</p></div>
+          <div class="stat-card"><h4>Rejected</h4><p id="rejectedStat">0</p></div>
+        </div>
+
+        <div style="display:flex; gap:10px; flex-wrap:wrap; margin:20px 0;">
+          <input type="text" id="searchInput" placeholder="Search..." class="form-control" style="flex:1;" />
+          <select id="filterStatus" class="form-control" style="width:150px;">
+            <option value="">All Status</option>
+            <option value="pending">Pending</option>
+            <option value="approved">Approved</option>
+            <option value="rejected">Rejected</option>
+          </select>
+          <button id="refreshBtn" class="btn btn-secondary">Refresh</button>
+        </div>
+
+        <div style="overflow-x:auto;">
+          <table id="appTable">
+            <thead><tr><th>Ref</th><th>Name</th><th>Type</th><th>Status</th><th>Actions</th></tr></thead>
+            <tbody id="tableBody"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Modals -->
+  <div id="viewModal" class="modal" style="display:none;">
+    <div class="modal-content"><span class="close" onclick="closeModal('viewModal')">&times;</span><h3>Details</h3><div id="viewContent"></div></div>
+  </div>
+  <div id="reviewModal" class="modal" style="display:none;">
+    <div class="modal-content">
+      <span class="close" onclick="closeModal('reviewModal')">&times;</span>
+      <h3>Review & Approve</h3>
+      <div id="reviewContent">
+        <p><strong>Name:</strong> <input type="text" id="editName" class="form-control" /></p>
+        <p><strong>Title:</strong> <input type="text" id="editTitle" class="form-control" /></p>
+        <div id="certPreview" style="border:1px solid #ccc; padding:15px; border-radius:8px; margin:15px 0;">
+          <h4>Preview</h4>
+          <p id="previewText"></p>
+        </div>
+        <div style="display:flex; gap:10px;">
+          <button id="finalApproveBtn" class="btn btn-success">Approve</button>
+          <button id="rejectBtn" class="btn btn-danger">Reject</button>
+        </div>
+        <div id="reviewProgress" style="display:none; margin-top:10px;">
+          <div style="background:#eee; border-radius:8px; height:16px; overflow:hidden;">
+            <div id="reviewProgressBar" style="width:0%; height:100%; background:#4CAF50;"></div>
+          </div>
+          <p id="reviewProgressText">Processing...</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="script.js"></script>
+  <script>
+    // Login
+    document.getElementById('loginForm').addEventListener('submit', function(e) {
+      e.preventDefault();
+      if (document.getElementById('passwordInput').value === '08092003') {
+        document.getElementById('loginDiv').style.display = 'none';
+        document.getElementById('dashboardDiv').style.display = 'block';
+        loadDashboard();
+      } else {
+        document.getElementById('loginError').style.display = 'block';
+      }
+    });
+
+    let currentApp = null, currentRef = null;
+
+    async function loadDashboard() {
+      try {
+        const res = await fetch('/api/applications');
+        const apps = await res.json();
+        updateStats(apps);
+        renderTable(apps);
+      } catch (err) { console.error(err); }
+    }
+
+    function updateStats(apps) {
+      document.getElementById('totalStat').textContent = apps.length;
+      document.getElementById('pendingStat').textContent = apps.filter(a => a.status === 'pending').length;
+      document.getElementById('approvedStat').textContent = apps.filter(a => a.status === 'approved').length;
+      document.getElementById('rejectedStat').textContent = apps.filter(a => a.status === 'rejected').length;
+    }
+
+    function renderTable(apps) {
+      const search = document.getElementById('searchInput').value.toLowerCase();
+      const filter = document.getElementById('filterStatus').value;
+      let filtered = apps;
+      if (search) filtered = filtered.filter(a => (a.fullName && a.fullName.toLowerCase().includes(search)) || (a.referenceNumber && a.referenceNumber.toLowerCase().includes(search)));
+      if (filter) filtered = filtered.filter(a => a.status === filter);
+      const tbody = document.getElementById('tableBody');
+      tbody.innerHTML = '';
+      filtered.forEach(app => {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td>${app.referenceNumber}</td>
+          <td>${app.fullName || 'N/A'}</td>
+          <td>${app.type || 'N/A'}</td>
+          <td><span style="color:${app.status === 'approved' ? 'green' : app.status === 'rejected' ? 'red' : 'orange'}">${app.status}</span></td>
+          <td>
+            <button class="btn btn-sm btn-info" onclick="viewApp('${app.referenceNumber}')">View</button>
+            <button class="btn btn-sm btn-warning" onclick="reviewApp('${app.referenceNumber}')">Review</button>
+          </td>
+        `;
+        tbody.appendChild(tr);
+      });
+    }
+
+    window.viewApp = async function(ref) {
+      const res = await fetch('/api/applications');
+      const apps = await res.json();
+      const app = apps.find(a => a.referenceNumber === ref);
+      if (!app) return;
+      const content = document.getElementById('viewContent');
+      let html = '<dl style="display:grid; grid-template-columns:1fr 2fr; gap:8px;">';
+      for (const [key, val] of Object.entries(app)) {
+        if (key === 'certificateNumber' && !val) continue;
+        html += `<dt><strong>${key}</strong></dt><dd>${val || 'N/A'}</dd>`;
+      }
+      html += '</dl>';
+      content.innerHTML = html;
+      document.getElementById('viewModal').style.display = 'block';
+    };
+
+    window.reviewApp = async function(ref) {
+      const res = await fetch('/api/applications');
+      const apps = await res.json();
+      const app = apps.find(a => a.referenceNumber === ref);
+      if (!app) return;
+      currentApp = app;
+      currentRef = ref;
+      document.getElementById('editName').value = app.fullName || '';
+      document.getElementById('editTitle').value = app.type || '';
+      updatePreview();
+      document.getElementById('reviewModal').style.display = 'block';
+      document.getElementById('reviewProgress').style.display = 'none';
+    };
+
+    document.getElementById('editName').addEventListener('input', updatePreview);
+    document.getElementById('editTitle').addEventListener('input', updatePreview);
+    function updatePreview() {
+      const name = document.getElementById('editName').value || 'Full Name';
+      const title = document.getElementById('editTitle').value || 'Certificate Type';
+      document.getElementById('previewText').innerHTML = `<strong>${name}</strong> — ${title}`;
+    }
+
+    document.getElementById('finalApproveBtn').addEventListener('click', async function() {
+      if (!currentApp) return;
+      const progressDiv = document.getElementById('reviewProgress');
+      const progressBar = document.getElementById('reviewProgressBar');
+      const progressText = document.getElementById('reviewProgressText');
+      progressDiv.style.display = 'block';
+      progressBar.style.width = '0%';
+      progressText.textContent = 'Generating certificate number...';
+
+      const certNum = generateCertNum();
+      const updated = {
+        ...currentApp,
+        status: 'approved',
+        certificateNumber: certNum,
+        fullName: document.getElementById('editName').value || currentApp.fullName,
+        type: document.getElementById('editTitle').value || currentApp.type
+      };
+      progressBar.style.width = '40%';
+      progressText.textContent = 'Updating...';
+      try {
+        await fetch(`/api/applications/${currentRef}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(updated)
+        });
+        progressBar.style.width = '80%';
+        progressText.textContent = 'Done!';
+        setTimeout(() => {
+          progressDiv.style.display = 'none';
+          document.getElementById('reviewModal').style.display = 'none';
+          loadDashboard();
+        }, 1000);
+      } catch (err) {
+        alert('Error approving.');
+        progressDiv.style.display = 'none';
+      }
+    });
+
+    document.getElementById('rejectBtn').addEventListener('click', async function() {
+      if (!currentApp || !confirm('Reject?')) return;
+      await fetch(`/api/applications/${currentRef}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ...currentApp, status: 'rejected' })
+      });
+      document.getElementById('reviewModal').style.display = 'none';
+      loadDashboard();
+    });
+
+    window.closeModal = function(id) { document.getElementById(id).style.display = 'none'; };
+    window.onclick = function(event) { if (event.target.classList.contains('modal')) event.target.style.display = 'none'; };
+    document.getElementById('refreshBtn').addEventListener('click', loadDashboard);
+    document.getElementById('searchInput').addEventListener('input', loadDashboard);
+    document.getElementById('filterStatus').addEventListener('change', loadDashboard);
+  </script>
+</body>
+</html>
