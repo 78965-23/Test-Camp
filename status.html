@@ -46,36 +46,34 @@
 
   <script src="script.js"></script>
   <script>
-    document.getElementById('trackForm').addEventListener('submit', async function(e) {
+    document.getElementById('trackForm').addEventListener('submit', function(e) {
       e.preventDefault();
       const ref = document.getElementById('refInput').value.trim();
       if (!ref) return;
       const resultDiv = document.getElementById('result');
       resultDiv.style.display = 'block';
-      resultDiv.innerHTML = 'Searching...';
-      try {
-        const res = await fetch('/api/applications');
-        const apps = await res.json();
-        const app = apps.find(a => a.referenceNumber === ref);
-        if (!app) {
-          resultDiv.innerHTML = '<p style="color:#ef4444;">Application not found.</p>';
-          return;
-        }
-        const statusColor = app.status === 'approved' ? '#22c55e' : app.status === 'rejected' ? '#ef4444' : '#f59e0b';
-        resultDiv.innerHTML = `
-          <div style="background:#ffffff; border-radius:12px; padding:1.5rem; box-shadow:0 2px 8px rgba(0,0,0,0.06); border:1px solid #e2e8f0;">
-            <h3 style="margin-bottom:0.75rem;">Application Details</h3>
-            <p><strong>Reference:</strong> ${app.referenceNumber}</p>
-            <p><strong>Applicant:</strong> ${app.fullName || 'N/A'}</p>
-            <p><strong>Type:</strong> ${app.type || 'N/A'}</p>
-            <p><strong>Date:</strong> ${app.submissionDate || 'N/A'}</p>
-            <p><strong>Status:</strong> <span style="color:${statusColor}; font-weight:600; text-transform:capitalize;">${app.status}</span></p>
-            ${app.certificateNumber ? `<p><strong>Certificate No:</strong> ${app.certificateNumber}</p>` : ''}
-          </div>
-        `;
-      } catch (err) {
-        resultDiv.innerHTML = '<p style="color:#ef4444;">Error fetching data.</p>';
+      
+      // Get applications from localStorage
+      const apps = JSON.parse(localStorage.getItem('applications') || '[]');
+      const app = apps.find(a => a.referenceNumber === ref);
+      
+      if (!app) {
+        resultDiv.innerHTML = '<p style="color:#ef4444;">❌ Application not found. Please check the reference number.</p>';
+        return;
       }
+      
+      const statusColor = app.status === 'approved' ? '#22c55e' : app.status === 'rejected' ? '#ef4444' : '#f59e0b';
+      resultDiv.innerHTML = `
+        <div style="background:#ffffff; border-radius:12px; padding:1.5rem; box-shadow:0 2px 8px rgba(0,0,0,0.06); border:1px solid #e2e8f0;">
+          <h3 style="margin-bottom:0.75rem;">✅ Application Details</h3>
+          <p><strong>Reference:</strong> ${app.referenceNumber}</p>
+          <p><strong>Applicant:</strong> ${app.fullName || 'N/A'}</p>
+          <p><strong>Type:</strong> ${app.type || 'N/A'}</p>
+          <p><strong>Date:</strong> ${app.submissionDate || 'N/A'}</p>
+          <p><strong>Status:</strong> <span style="color:${statusColor}; font-weight:600; text-transform:capitalize;">${app.status}</span></p>
+          ${app.certificateNumber ? `<p><strong>Certificate No:</strong> ${app.certificateNumber}</p>` : ''}
+        </div>
+      `;
     });
   </script>
 </body>
