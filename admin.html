@@ -8,7 +8,22 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 </head>
 <body>
-  <nav class="navbar">...</nav>
+  <!-- ====== Consistent Navigation ====== -->
+  <nav class="navbar">
+    <div class="nav-container">
+      <a href="index.html" class="nav-logo">CertifyHub</a>
+      <button class="nav-toggle" id="navToggle" aria-label="Toggle navigation">
+        <span></span><span></span><span></span>
+      </button>
+      <ul class="nav-menu" id="navMenu">
+        <li><a href="index.html">Home</a></li>
+        <li><a href="status.html">Track</a></li>
+        <li><a href="download.html">Download</a></li>
+        <li><a href="admin.html" class="active">Admin</a></li>
+      </ul>
+    </div>
+  </nav>
+
   <section class="admin-section">
     <div class="container">
       <div id="loginDiv">
@@ -33,7 +48,7 @@
         </div>
 
         <div style="display:flex; gap:10px; flex-wrap:wrap; margin:20px 0;">
-          <input type="text" id="searchInput" placeholder="Search..." class="form-control" style="flex:1;" />
+          <input type="text" id="searchInput" placeholder="Search by name or ref..." class="form-control" style="flex:1;" />
           <select id="filterStatus" class="form-control" style="width:150px;">
             <option value="">All Status</option>
             <option value="pending">Pending</option>
@@ -64,7 +79,7 @@
       <div id="reviewContent">
         <p><strong>Name:</strong> <input type="text" id="editName" class="form-control" /></p>
         <p><strong>Title:</strong> <input type="text" id="editTitle" class="form-control" /></p>
-        <div id="certPreview" style="border:1px solid #ccc; padding:15px; border-radius:8px; margin:15px 0;">
+        <div id="certPreview" style="border:1px solid #e2e8f0; padding:15px; border-radius:3px; margin:15px 0; background:#f8fafc;">
           <h4>Preview</h4>
           <p id="previewText"></p>
         </div>
@@ -73,10 +88,10 @@
           <button id="rejectBtn" class="btn btn-danger">Reject</button>
         </div>
         <div id="reviewProgress" style="display:none; margin-top:10px;">
-          <div style="background:#eee; border-radius:8px; height:16px; overflow:hidden;">
-            <div id="reviewProgressBar" style="width:0%; height:100%; background:#4CAF50;"></div>
+          <div style="background:#e2e8f0; border-radius:8px; height:16px; overflow:hidden;">
+            <div id="reviewProgressBar" style="width:0%; height:100%; background:#1e293b;"></div>
           </div>
-          <p id="reviewProgressText">Processing...</p>
+          <p id="reviewProgressText" style="color:#475569;">Processing...</p>
         </div>
       </div>
     </div>
@@ -84,7 +99,7 @@
 
   <script src="script.js"></script>
   <script>
-    // Login
+    // (same admin logic as before – unchanged)
     document.getElementById('loginForm').addEventListener('submit', function(e) {
       e.preventDefault();
       if (document.getElementById('passwordInput').value === '08092003') {
@@ -128,7 +143,7 @@
           <td>${app.referenceNumber}</td>
           <td>${app.fullName || 'N/A'}</td>
           <td>${app.type || 'N/A'}</td>
-          <td><span style="color:${app.status === 'approved' ? 'green' : app.status === 'rejected' ? 'red' : 'orange'}">${app.status}</span></td>
+          <td><span style="color:${app.status === 'approved' ? '#22c55e' : app.status === 'rejected' ? '#ef4444' : '#f59e0b'}">${app.status}</span></td>
           <td>
             <button class="btn btn-sm btn-info" onclick="viewApp('${app.referenceNumber}')">View</button>
             <button class="btn btn-sm btn-warning" onclick="reviewApp('${app.referenceNumber}')">Review</button>
@@ -215,7 +230,7 @@
     });
 
     document.getElementById('rejectBtn').addEventListener('click', async function() {
-      if (!currentApp || !confirm('Reject?')) return;
+      if (!currentApp || !confirm('Reject this application?')) return;
       await fetch(`/api/applications/${currentRef}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
