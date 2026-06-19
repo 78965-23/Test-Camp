@@ -1,0 +1,322 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Admin Panel</title>
+  <link rel="stylesheet" href="style.css" />
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,400;14..32,500;14..32,600&display=swap" rel="stylesheet" />
+</head>
+<body>
+  <nav class="navbar">
+    <div class="nav-container">
+      <a href="index.html" class="nav-logo">Certify<span>Hub</span></a>
+      <button class="nav-toggle" id="navToggle" aria-label="Toggle navigation">
+        <span></span><span></span><span></span>
+      </button>
+      <ul class="nav-menu" id="navMenu">
+        <li><a href="index.html">Home</a></li>
+        <li><a href="status.html">Track</a></li>
+        <li><a href="download.html">Download</a></li>
+        <li><a href="admin.html" class="active">Admin</a></li>
+      </ul>
+    </div>
+  </nav>
+
+  <section class="admin-section">
+    <div class="container">
+      <!-- Login -->
+      <div id="loginDiv">
+        <h2>Admin Login</h2>
+        <form id="loginForm">
+          <div class="form-group">
+            <label for="passwordInput">Password</label>
+            <input type="password" id="passwordInput" class="form-control" placeholder="Enter password" required />
+          </div>
+          <button type="submit" class="btn btn-primary">Login</button>
+        </form>
+        <p id="loginError" style="color:red; display:none;">Invalid password. Try again.</p>
+      </div>
+
+      <!-- Dashboard (hidden until login) -->
+      <div id="dashboardDiv" style="display:none;">
+        <h2>Admin Dashboard</h2>
+        <div class="stats-grid" id="statsGrid">
+          <div class="stat-card"><h4>Total</h4><p id="totalStat">0</p></div>
+          <div class="stat-card"><h4>Pending</h4><p id="pendingStat">0</p></div>
+          <div class="stat-card"><h4>Approved</h4><p id="approvedStat">0</p></div>
+          <div class="stat-card"><h4>Rejected</h4><p id="rejectedStat">0</p></div>
+        </div>
+
+        <!-- Search and filter -->
+        <div style="display:flex; gap:10px; flex-wrap:wrap; margin:20px 0;">
+          <input type="text" id="searchInput" placeholder="Search by name or ref..." class="form-control" style="flex:1; min-width:200px;" />
+          <select id="filterStatus" class="form-control" style="width:150px;">
+            <option value="">All Status</option>
+            <option value="pending">Pending</option>
+            <option value="approved">Approved</option>
+            <option value="rejected">Rejected</option>
+          </select>
+          <button id="refreshBtn" class="btn btn-secondary">Refresh</button>
+        </div>
+
+        <!-- Table -->
+        <div style="overflow-x:auto;">
+          <table id="appTable" style="width:100%; border-collapse:collapse; background:white; border-radius:12px; overflow:hidden; box-shadow:0 4px 12px rgba(0,0,0,0.1);">
+            <thead style="background:#f0f4fa;">
+              <tr>
+                <th>Ref Number</th>
+                <th>Name</th>
+                <th>Type</th>
+                <th>Status</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody id="tableBody"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Modals (hidden by default) -->
+  <!-- View Modal -->
+  <div id="viewModal" class="modal" style="display:none;">
+    <div class="modal-content">
+      <span class="close" onclick="closeModal('viewModal')">&times;</span>
+      <h3>Application Details</h3>
+      <div id="viewContent"></div>
+    </div>
+  </div>
+
+  <!-- Review Modal -->
+  <div id="reviewModal" class="modal" style="display:none;">
+    <div class="modal-content">
+      <span class="close" onclick="closeModal('reviewModal')">&times;</span>
+      <h3>Review & Approve</h3>
+      <div id="reviewContent">
+        <p><strong>Name:</strong> <input type="text" id="editName" class="form-control" /></p>
+        <p><strong>Title (Certificate Name):</strong> <input type="text" id="editTitle" class="form-control" /></p>
+        <div id="certPreview" style="border:1px solid #ccc; padding:15px; border-radius:8px; margin:15px 0; background:#f9f9f9;">
+          <h4>Certificate Preview</h4>
+          <p id="previewText"></p>
+        </div>
+        <div style="display:flex; gap:10px;">
+          <button id="finalApproveBtn" class="btn btn-success">Approve</button>
+          <button id="rejectBtn" class="btn btn-danger">Reject</button>
+        </div>
+        <div id="reviewProgress" style="display:none; margin-top:10px;">
+          <div style="background:#eee; border-radius:8px; height:16px; overflow:hidden;">
+            <div id="reviewProgressBar" style="width:0%; height:100%; background:#4CAF50;"></div>
+          </div>
+          <p id="reviewProgressText">Processing...</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="script.js"></script>
+  <script>
+    // Admin logic
+    let currentApp = null;
+    let currentRef = null;
+
+    // Login
+    document.getElementById('loginForm').addEventListener('submit', function(e) {
+      e.preventDefault();
+      const pwd = document.getElementById('passwordInput').value;
+      if (pwd === '08092003') {
+        document.getElementById('loginDiv').style.display = 'none';
+        document.getElementById('dashboardDiv').style.display = 'block';
+        loadDashboard();
+      } else {
+        document.getElementById('loginError').style.display = 'block';
+      }
+    });
+
+    // Load stats and table
+    async function loadDashboard() {
+      try {
+        const res = await fetch('/api/applications');
+        const apps = await res.json();
+        updateStats(apps);
+        renderTable(apps);
+      } catch (err) {
+        console.error('Error loading data:', err);
+      }
+    }
+
+    function updateStats(apps) {
+      const total = apps.length;
+      const pending = apps.filter(a => a.status === 'pending').length;
+      const approved = apps.filter(a => a.status === 'approved').length;
+      const rejected = apps.filter(a => a.status === 'rejected').length;
+      document.getElementById('totalStat').textContent = total;
+      document.getElementById('pendingStat').textContent = pending;
+      document.getElementById('approvedStat').textContent = approved;
+      document.getElementById('rejectedStat').textContent = rejected;
+    }
+
+    function renderTable(apps) {
+      const search = document.getElementById('searchInput').value.toLowerCase();
+      const filter = document.getElementById('filterStatus').value;
+      let filtered = apps;
+      if (search) {
+        filtered = filtered.filter(a => (a.fullName && a.fullName.toLowerCase().includes(search)) || (a.referenceNumber && a.referenceNumber.toLowerCase().includes(search)));
+      }
+      if (filter) {
+        filtered = filtered.filter(a => a.status === filter);
+      }
+      const tbody = document.getElementById('tableBody');
+      tbody.innerHTML = '';
+      filtered.forEach(app => {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td>${app.referenceNumber}</td>
+          <td>${app.fullName || 'N/A'}</td>
+          <td>${app.type || 'N/A'}</td>
+          <td><span style="color:${app.status === 'approved' ? 'green' : app.status === 'rejected' ? 'red' : 'orange'}">${app.status}</span></td>
+          <td>
+            <button class="btn btn-sm btn-info" onclick="viewApp('${app.referenceNumber}')">View</button>
+            <button class="btn btn-sm btn-warning" onclick="reviewApp('${app.referenceNumber}')">Review</button>
+          </td>
+        `;
+        tbody.appendChild(tr);
+      });
+    }
+
+    // View modal
+    window.viewApp = async function(ref) {
+      const res = await fetch('/api/applications');
+      const apps = await res.json();
+      const app = apps.find(a => a.referenceNumber === ref);
+      if (!app) return;
+      const content = document.getElementById('viewContent');
+      let html = '<dl style="display:grid; grid-template-columns:1fr 2fr; gap:8px;">';
+      for (const [key, val] of Object.entries(app)) {
+        if (key === 'certificateNumber' && !val) continue;
+        html += `<dt><strong>${key}</strong></dt><dd>${val || 'N/A'}</dd>`;
+      }
+      html += '</dl>';
+      content.innerHTML = html;
+      document.getElementById('viewModal').style.display = 'block';
+    };
+
+    // Review modal
+    window.reviewApp = async function(ref) {
+      const res = await fetch('/api/applications');
+      const apps = await res.json();
+      const app = apps.find(a => a.referenceNumber === ref);
+      if (!app) return;
+      currentApp = app;
+      currentRef = ref;
+      document.getElementById('editName').value = app.fullName || '';
+      document.getElementById('editTitle').value = app.type || '';
+      updatePreview();
+      document.getElementById('reviewModal').style.display = 'block';
+      document.getElementById('reviewProgress').style.display = 'none';
+    };
+
+    // Update preview
+    document.getElementById('editName').addEventListener('input', updatePreview);
+    document.getElementById('editTitle').addEventListener('input', updatePreview);
+
+    function updatePreview() {
+      const name = document.getElementById('editName').value || 'Full Name';
+      const title = document.getElementById('editTitle').value || 'Certificate Type';
+      document.getElementById('previewText').innerHTML = `<strong>${name}</strong> — ${title}`;
+    }
+
+    // Final Approve
+    document.getElementById('finalApproveBtn').addEventListener('click', async function() {
+      if (!currentApp) return;
+      const progressDiv = document.getElementById('reviewProgress');
+      const progressBar = document.getElementById('reviewProgressBar');
+      const progressText = document.getElementById('reviewProgressText');
+      progressDiv.style.display = 'block';
+      progressBar.style.width = '0%';
+      progressText.textContent = 'Generating certificate number...';
+
+      // Generate certificate number
+      const certNum = generateCertNum();
+      const updated = {
+        ...currentApp,
+        status: 'approved',
+        certificateNumber: certNum,
+        fullName: document.getElementById('editName').value || currentApp.fullName,
+        type: document.getElementById('editTitle').value || currentApp.type
+      };
+
+      progressBar.style.width = '40%';
+      progressText.textContent = 'Updating server...';
+
+      try {
+        const response = await fetch(`/api/applications/${currentRef}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(updated)
+        });
+        if (!response.ok) throw new Error('Update failed');
+        progressBar.style.width = '80%';
+        progressText.textContent = 'Done!';
+        setTimeout(() => {
+          progressDiv.style.display = 'none';
+          document.getElementById('reviewModal').style.display = 'none';
+          loadDashboard();
+        }, 1000);
+      } catch (err) {
+        alert('Error approving. Try again.');
+        progressDiv.style.display = 'none';
+      }
+    });
+
+    // Reject
+    document.getElementById('rejectBtn').addEventListener('click', async function() {
+      if (!currentApp) return;
+      if (!confirm('Reject this application?')) return;
+      const updated = {
+        ...currentApp,
+        status: 'rejected'
+      };
+      try {
+        await fetch(`/api/applications/${currentRef}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(updated)
+        });
+        document.getElementById('reviewModal').style.display = 'none';
+        loadDashboard();
+      } catch (err) {
+        alert('Error rejecting.');
+      }
+    });
+
+    function generateCertNum() {
+      const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+      let ref = 'CERT-';
+      for (let i = 0; i < 8; i++) ref += chars.charAt(Math.floor(Math.random() * chars.length));
+      ref += '-';
+      for (let i = 0; i < 5; i++) ref += chars.charAt(Math.floor(Math.random() * chars.length));
+      return ref;
+    }
+
+    // Close modal
+    window.closeModal = function(id) {
+      document.getElementById(id).style.display = 'none';
+    };
+
+    // Click outside to close
+    window.onclick = function(event) {
+      if (event.target.classList.contains('modal')) {
+        event.target.style.display = 'none';
+      }
+    };
+
+    // Refresh
+    document.getElementById('refreshBtn').addEventListener('click', loadDashboard);
+    document.getElementById('searchInput').addEventListener('input', loadDashboard);
+    document.getElementById('filterStatus').addEventListener('change', loadDashboard);
+  </script>
+</body>
+</html>
