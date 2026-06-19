@@ -8,7 +8,7 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 </head>
 <body>
-  <!-- ====== Consistent Navigation ====== -->
+  <!-- Navigation -->
   <nav class="navbar">
     <div class="nav-container">
       <a href="index.html" class="nav-logo">CertifyHub</a>
@@ -37,13 +37,19 @@
       </form>
       <div id="progressContainer" style="display:none; margin-top:20px;">
         <div style="background:#e2e8f0; border-radius:8px; height:20px; overflow:hidden;">
-          <div id="progressBar" style="width:0%; height:100%; background:#1e293b;"></div>
+          <div id="progressBar" style="width:0%; height:100%; background:#0f172a;"></div>
         </div>
         <p id="progressText" style="margin-top:5px; color:#475569;">Generating...</p>
       </div>
       <div id="result" style="margin-top:20px; display:none;"></div>
     </div>
   </section>
+
+  <footer>
+    <div class="container">
+      <p>&copy; 2026 CertifyHub. All rights reserved.</p>
+    </div>
+  </footer>
 
   <script src="script.js"></script>
   <script>
@@ -67,7 +73,7 @@
         if (!app) {
           progressContainer.style.display = 'none';
           resultDiv.style.display = 'block';
-          resultDiv.innerHTML = '<p style="color:red;">No application found.</p>';
+          resultDiv.innerHTML = '<p style="color:#ef4444;">No application found.</p>';
           return;
         }
         if (app.status !== 'approved') {
@@ -129,7 +135,7 @@
         console.error(err);
         progressContainer.style.display = 'none';
         resultDiv.style.display = 'block';
-        resultDiv.innerHTML = '<p style="color:red;">Error. Try again.</p>';
+        resultDiv.innerHTML = '<p style="color:#ef4444;">Error. Try again.</p>';
       }
     });
   </script>
