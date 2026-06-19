@@ -38,6 +38,8 @@
         </div>
         <p id="progressText" style="margin-top:5px; color:#475569;">Generating PDF...</p>
       </div>
+      <!-- Error display area -->
+      <div id="errorMessage" style="display:none; margin-top:20px; padding:1rem; background:#fee2e2; border:1px solid #ef4444; border-radius:8px; color:#991b1b;"></div>
     </div>
   </section>
 
@@ -139,7 +141,7 @@
         fieldsContainer.appendChild(div);
       });
 
-      // Reference number generator
+      // Reference number generator (fallback if script.js not loaded)
       function generateRef() {
         const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
         let ref = 'REF-';
@@ -149,22 +151,39 @@
         return ref;
       }
 
-      // Submit handler
+      // Submit handler with detailed error handling
       document.getElementById('applyForm').addEventListener('submit', async function(e) {
         e.preventDefault();
+        
+        // Clear previous error
+        const errorDiv = document.getElementById('errorMessage');
+        errorDiv.style.display = 'none';
+        errorDiv.textContent = '';
+
         // Validate required fields
         const inputs = this.querySelectorAll('input[required]');
         let valid = true;
         inputs.forEach(inp => {
-          if (!inp.value.trim()) { valid = false; inp.style.borderColor = 'red'; }
-          else inp.style.borderColor = '';
+          if (!inp.value.trim()) { 
+            valid = false; 
+            inp.style.borderColor = '#ef4444';
+          } else {
+            inp.style.borderColor = '';
+          }
         });
         const emailInput = document.getElementById('email');
         if (emailInput && emailInput.value) {
           const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-          if (!emailPattern.test(emailInput.value)) { valid = false; emailInput.style.borderColor = 'red'; alert('Invalid email'); }
+          if (!emailPattern.test(emailInput.value)) { 
+            valid = false; 
+            emailInput.style.borderColor = '#ef4444';
+            alert('Please enter a valid email address.');
+          }
         }
-        if (!valid) { alert('Please fill in all required fields.'); return; }
+        if (!valid) {
+          alert('Please fill in all required fields.');
+          return;
+        }
 
         // Gather data
         const data = { type };
@@ -172,6 +191,7 @@
           const el = document.getElementById(f.name);
           if (el) data[f.name] = el.value.trim();
         });
+        // Ensure reference number is present
         const ref = generateRef();
         data.referenceNumber = ref;
         data.status = 'pending';
@@ -191,7 +211,13 @@
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(data)
           });
-          if (!response.ok) throw new Error('Server error');
+
+          // Check if response is ok
+          if (!response.ok) {
+            const errorData = await response.json();
+            throw new Error(errorData.error || `Server error (${response.status})`);
+          }
+
           const saved = await response.json();
 
           progressBar.style.width = '50%';
@@ -224,12 +250,17 @@
 
           progressBar.style.width = '100%';
           progressText.textContent = 'Done! Receipt downloaded.';
-          setTimeout(() => { progressContainer.style.display = 'none'; this.reset(); }, 2000);
+          setTimeout(() => { 
+            progressContainer.style.display = 'none'; 
+            this.reset();
+          }, 2000);
 
         } catch (err) {
-          alert('Error submitting application. Try again.');
+          console.error('Submission error:', err);
+          // Show error to user
+          errorDiv.textContent = 'Error: ' + (err.message || 'Unknown error. Please try again.');
+          errorDiv.style.display = 'block';
           progressContainer.style.display = 'none';
-          console.error(err);
         }
       });
     });
