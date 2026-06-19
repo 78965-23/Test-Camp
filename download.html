@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Download Certificate</title>
+  <link rel="stylesheet" href="style.css" />
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+</head>
+<body>
+  <nav class="navbar">...</nav>
+  <section class="form-section">
+    <div class="container">
+      <h2>Download Your Certificate</h2>
+      <p>Enter Reference or Certificate Number (only approved applications).</p>
+      <form id="downloadForm">
+        <div class="form-group">
+          <label for="certInput">Reference or Certificate Number</label>
+          <input type="text" id="certInput" class="form-control" placeholder="REF-... or CERT-..." required />
+        </div>
+        <button type="submit" class="btn btn-primary">Download PDF</button>
+      </form>
+      <div id="progressContainer" style="display:none; margin-top:20px;">
+        <div style="background:#eee; border-radius:8px; height:20px; overflow:hidden;">
+          <div id="progressBar" style="width:0%; height:100%; background:#4CAF50;"></div>
+        </div>
+        <p id="progressText">Generating...</p>
+      </div>
+      <div id="result" style="margin-top:20px; display:none;"></div>
+    </div>
+  </section>
+  <script src="script.js"></script>
+  <script>
+    document.getElementById('downloadForm').addEventListener('submit', async function(e) {
+      e.preventDefault();
+      const input = document.getElementById('certInput').value.trim();
+      if (!input) return;
+      const resultDiv = document.getElementById('result');
+      const progressContainer = document.getElementById('progressContainer');
+      const progressBar = document.getElementById('progressBar');
+      const progressText = document.getElementById('progressText');
+      resultDiv.style.display = 'none';
+      progressContainer.style.display = 'block';
+      progressBar.style.width = '0%';
+      progressText.textContent = 'Searching...';
+
+      try {
+        const res = await fetch('/api/applications');
+        const apps = await res.json();
+        const app = apps.find(a => a.referenceNumber === input || a.certificateNumber === input);
+        if (!app) {
+          progressContainer.style.display = 'none';
+          resultDiv.style.display = 'block';
+          resultDiv.innerHTML = '<p style="color:red;">No application found.</p>';
+          return;
+        }
+        if (app.status !== 'approved') {
+          progressContainer.style.display = 'none';
+          resultDiv.style.display = 'block';
+          resultDiv.innerHTML = '<p style="color:orange;">Application not approved yet.</p>';
+          return;
+        }
+
+        progressBar.style.width = '30%';
+        progressText.textContent = 'Generating certificate...';
+
+        const { jsPDF } = window.jspdf;
+        const doc = new jsPDF('landscape');
+        const pageWidth = doc.internal.pageSize.getWidth();
+        const pageHeight = doc.internal.pageSize.getHeight();
+        doc.setDrawColor(0, 100, 200);
+        doc.setLineWidth(2);
+        doc.rect(10, 10, pageWidth - 20, pageHeight - 20);
+        doc.setFontSize(28);
+        doc.setTextColor(0, 80, 180);
+        doc.text('CERTIFICATE OF ACHIEVEMENT', pageWidth / 2, 50, { align: 'center' });
+        doc.setFontSize(22);
+        doc.setTextColor(0, 0, 0);
+        doc.text('This is to certify that', pageWidth / 2, 80, { align: 'center' });
+        doc.setFontSize(32);
+        doc.setTextColor(0, 100, 0);
+        doc.text(app.fullName || 'N/A', pageWidth / 2, 115, { align: 'center' });
+        doc.setFontSize(18);
+        doc.setTextColor(0, 0, 0);
+        const typeNames = { academic: 'Academic Excellence', professional: 'Professional Achievement', community: 'Community Service', training: 'Training Program' };
+        const typeLabel = typeNames[app.type] || app.type || 'Certificate';
+        doc.text(`has successfully completed the ${typeLabel} program.`, pageWidth / 2, 145, { align: 'center' });
+        doc.setFontSize(14);
+        doc.text(`Certificate Number: ${app.certificateNumber || 'N/A'}`, pageWidth / 2, 180, { align: 'center' });
+        doc.text(`Date: ${app.submissionDate || new Date().toISOString().split('T')[0]}`, pageWidth / 2, 195, { align: 'center' });
+        doc.setFontSize(12);
+        doc.setTextColor(100);
+        doc.text('Issued by CertifyHub', pageWidth / 2, 220, { align: 'center' });
+
+        progressBar.style.width = '70%';
+        progressText.textContent = 'Finalizing...';
+
+        const pdfBlob = doc.output('blob');
+        const url = URL.createObjectURL(pdfBlob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = `certificate-${app.certificateNumber || 'download'}.pdf`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        URL.revokeObjectURL(url);
+
+        progressBar.style.width = '100%';
+        progressText.textContent = 'Download complete!';
+        setTimeout(() => { progressContainer.style.display = 'none'; }, 2000);
+
+      } catch (err) {
+        console.error(err);
+        progressContainer.style.display = 'none';
+        resultDiv.style.display = 'block';
+        resultDiv.innerHTML = '<p style="color:red;">Error. Try again.</p>';
+      }
+    });
+  </script>
+</body>
+</html>
