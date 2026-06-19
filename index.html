@@ -11,7 +11,6 @@
   <!-- Navigation -->
   <nav class="navbar">
     <div class="nav-container">
-      <!-- Plain text, no extra logo styling -->
       <a href="index.html" class="nav-logo">CertifyHub</a>
       <button class="nav-toggle" id="navToggle" aria-label="Toggle navigation">
         <span></span><span></span><span></span>
@@ -25,13 +24,12 @@
     </div>
   </nav>
 
-  <!-- Hero Section (no icons) -->
+  <!-- Hero Section -->
   <section class="hero">
     <div class="hero-content">
       <h1>Your Achievements,<br />Certified &amp; Secure</h1>
       <p>Apply for your official certificate in minutes. Track, download, and manage everything in one place.</p>
     </div>
-    <!-- hero-graphic removed entirely -->
   </section>
 
   <!-- Certificate Cards -->
@@ -41,7 +39,6 @@
       <p class="section-subtitle fade-in">Select the type of certificate you'd like to apply for.</p>
       <div class="cards-grid">
         <div class="cert-card fade-in">
-          <!-- Icon div remains, but empty (no emoji) -->
           <div class="card-icon"></div>
           <h3>Academic Excellence</h3>
           <p>Recognizing outstanding academic performance.</p>
@@ -77,7 +74,7 @@
 
   <script src="script.js"></script>
   <script>
-    // Fade-in observer (unchanged)
+    // Fade-in observer (homepage only)
     document.addEventListener('DOMContentLoaded', function() {
       const fadeEls = document.querySelectorAll('.fade-in');
       const observer = new IntersectionObserver((entries) => {
