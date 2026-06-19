@@ -26,6 +26,7 @@
 
   <section class="admin-section">
     <div class="container">
+      <!-- Login Form -->
       <div id="loginDiv">
         <h2>Admin Login</h2>
         <form id="loginForm">
@@ -38,8 +39,14 @@
         <p id="loginError" style="color:red; display:none;">Invalid password.</p>
       </div>
 
+      <!-- Dashboard (hidden until login) -->
       <div id="dashboardDiv" style="display:none;">
-        <h2>Admin Dashboard</h2>
+        <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:1rem;">
+          <h2>Admin Dashboard</h2>
+          <!-- Logout button -->
+          <button id="logoutBtn" class="btn btn-danger" style="padding:0.6rem 1.8rem;">Logout</button>
+        </div>
+
         <div class="stats-grid" id="statsGrid">
           <div class="stat-card"><h4>Total</h4><p id="totalStat">0</p></div>
           <div class="stat-card"><h4>Pending</h4><p id="pendingStat">0</p></div>
@@ -47,8 +54,9 @@
           <div class="stat-card"><h4>Rejected</h4><p id="rejectedStat">0</p></div>
         </div>
 
+        <!-- Search, filter, refresh, and logout (logout already above) -->
         <div style="display:flex; gap:10px; flex-wrap:wrap; margin:20px 0;">
-          <input type="text" id="searchInput" placeholder="Search by name or ref..." class="form-control" style="flex:1;" />
+          <input type="text" id="searchInput" placeholder="Search by name or ref..." class="form-control" style="flex:1; min-width:180px;" />
           <select id="filterStatus" class="form-control" style="width:150px;">
             <option value="">All Status</option>
             <option value="pending">Pending</option>
@@ -60,7 +68,15 @@
 
         <div style="overflow-x:auto;">
           <table id="appTable">
-            <thead><tr><th>Ref</th><th>Name</th><th>Type</th><th>Status</th><th>Actions</th></tr></thead>
+            <thead>
+              <tr>
+                <th>Ref</th>
+                <th>Name</th>
+                <th>Type</th>
+                <th>Status</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
             <tbody id="tableBody"></tbody>
           </table>
         </div>
@@ -70,26 +86,31 @@
 
   <!-- Modals -->
   <div id="viewModal" class="modal" style="display:none;">
-    <div class="modal-content"><span class="close" onclick="closeModal('viewModal')">&times;</span><h3>Details</h3><div id="viewContent"></div></div>
+    <div class="modal-content">
+      <span class="close" onclick="closeModal('viewModal')">&times;</span>
+      <h3>Application Details</h3>
+      <div id="viewContent"></div>
+    </div>
   </div>
+
   <div id="reviewModal" class="modal" style="display:none;">
     <div class="modal-content">
       <span class="close" onclick="closeModal('reviewModal')">&times;</span>
       <h3>Review & Approve</h3>
       <div id="reviewContent">
         <p><strong>Name:</strong> <input type="text" id="editName" class="form-control" /></p>
-        <p><strong>Title:</strong> <input type="text" id="editTitle" class="form-control" /></p>
-        <div id="certPreview" style="border:1px solid #e2e8f0; padding:15px; border-radius:3px; margin:15px 0; background:#f8fafc;">
-          <h4>Preview</h4>
+        <p><strong>Title (Certificate Name):</strong> <input type="text" id="editTitle" class="form-control" /></p>
+        <div id="certPreview" style="border:1px solid #e2e8f0; padding:1rem; border-radius:8px; margin:1rem 0; background:#f8fafc;">
+          <h4>Certificate Preview</h4>
           <p id="previewText"></p>
         </div>
-        <div style="display:flex; gap:10px;">
+        <div style="display:flex; gap:10px; flex-wrap:wrap;">
           <button id="finalApproveBtn" class="btn btn-success">Approve</button>
           <button id="rejectBtn" class="btn btn-danger">Reject</button>
         </div>
         <div id="reviewProgress" style="display:none; margin-top:10px;">
           <div style="background:#e2e8f0; border-radius:8px; height:16px; overflow:hidden;">
-            <div id="reviewProgressBar" style="width:0%; height:100%; background:#1e293b;"></div>
+            <div id="reviewProgressBar" style="width:0%; height:100%; background:#0f172a;"></div>
           </div>
           <p id="reviewProgressText" style="color:#475569;">Processing...</p>
         </div>
@@ -99,27 +120,55 @@
 
   <script src="script.js"></script>
   <script>
-    // (same admin logic as before – unchanged)
+    // ============================================================
+    // ADMIN LOGIC
+    // ============================================================
+    let currentApp = null;
+    let currentRef = null;
+
+    // ---- Login ----
     document.getElementById('loginForm').addEventListener('submit', function(e) {
       e.preventDefault();
-      if (document.getElementById('passwordInput').value === '08092003') {
+      const pwd = document.getElementById('passwordInput').value;
+      if (pwd === '08092003') {
         document.getElementById('loginDiv').style.display = 'none';
         document.getElementById('dashboardDiv').style.display = 'block';
         loadDashboard();
+        document.getElementById('loginError').style.display = 'none';
       } else {
         document.getElementById('loginError').style.display = 'block';
       }
     });
 
-    let currentApp = null, currentRef = null;
+    // ---- Logout ----
+    document.getElementById('logoutBtn').addEventListener('click', function() {
+      // Hide dashboard, show login
+      document.getElementById('dashboardDiv').style.display = 'none';
+      document.getElementById('loginDiv').style.display = 'block';
+      // Clear password field
+      document.getElementById('passwordInput').value = '';
+      // Reset any state
+      currentApp = null;
+      currentRef = null;
+      // Optionally clear table and stats
+      document.getElementById('tableBody').innerHTML = '';
+      // Reset stats to 0
+      document.getElementById('totalStat').textContent = '0';
+      document.getElementById('pendingStat').textContent = '0';
+      document.getElementById('approvedStat').textContent = '0';
+      document.getElementById('rejectedStat').textContent = '0';
+    });
 
+    // ---- Load Dashboard ----
     async function loadDashboard() {
       try {
         const res = await fetch('/api/applications');
         const apps = await res.json();
         updateStats(apps);
         renderTable(apps);
-      } catch (err) { console.error(err); }
+      } catch (err) {
+        console.error('Error loading data:', err);
+      }
     }
 
     function updateStats(apps) {
@@ -133,17 +182,25 @@
       const search = document.getElementById('searchInput').value.toLowerCase();
       const filter = document.getElementById('filterStatus').value;
       let filtered = apps;
-      if (search) filtered = filtered.filter(a => (a.fullName && a.fullName.toLowerCase().includes(search)) || (a.referenceNumber && a.referenceNumber.toLowerCase().includes(search)));
-      if (filter) filtered = filtered.filter(a => a.status === filter);
+      if (search) {
+        filtered = filtered.filter(a =>
+          (a.fullName && a.fullName.toLowerCase().includes(search)) ||
+          (a.referenceNumber && a.referenceNumber.toLowerCase().includes(search))
+        );
+      }
+      if (filter) {
+        filtered = filtered.filter(a => a.status === filter);
+      }
       const tbody = document.getElementById('tableBody');
       tbody.innerHTML = '';
       filtered.forEach(app => {
         const tr = document.createElement('tr');
+        const statusColor = app.status === 'approved' ? '#22c55e' : app.status === 'rejected' ? '#ef4444' : '#f59e0b';
         tr.innerHTML = `
           <td>${app.referenceNumber}</td>
           <td>${app.fullName || 'N/A'}</td>
           <td>${app.type || 'N/A'}</td>
-          <td><span style="color:${app.status === 'approved' ? '#22c55e' : app.status === 'rejected' ? '#ef4444' : '#f59e0b'}">${app.status}</span></td>
+          <td><span style="color:${statusColor}; font-weight:600; text-transform:capitalize;">${app.status}</span></td>
           <td>
             <button class="btn btn-sm btn-info" onclick="viewApp('${app.referenceNumber}')">View</button>
             <button class="btn btn-sm btn-warning" onclick="reviewApp('${app.referenceNumber}')">Review</button>
@@ -153,6 +210,7 @@
       });
     }
 
+    // ---- View Modal ----
     window.viewApp = async function(ref) {
       const res = await fetch('/api/applications');
       const apps = await res.json();
@@ -169,6 +227,7 @@
       document.getElementById('viewModal').style.display = 'block';
     };
 
+    // ---- Review Modal ----
     window.reviewApp = async function(ref) {
       const res = await fetch('/api/applications');
       const apps = await res.json();
@@ -191,6 +250,7 @@
       document.getElementById('previewText').innerHTML = `<strong>${name}</strong> — ${title}`;
     }
 
+    // ---- Approve ----
     document.getElementById('finalApproveBtn').addEventListener('click', async function() {
       if (!currentApp) return;
       const progressDiv = document.getElementById('reviewProgress');
@@ -209,13 +269,15 @@
         type: document.getElementById('editTitle').value || currentApp.type
       };
       progressBar.style.width = '40%';
-      progressText.textContent = 'Updating...';
+      progressText.textContent = 'Updating server...';
+
       try {
-        await fetch(`/api/applications/${currentRef}`, {
+        const response = await fetch(`/api/applications/${currentRef}`, {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(updated)
         });
+        if (!response.ok) throw new Error('Update failed');
         progressBar.style.width = '80%';
         progressText.textContent = 'Done!';
         setTimeout(() => {
@@ -224,24 +286,44 @@
           loadDashboard();
         }, 1000);
       } catch (err) {
-        alert('Error approving.');
+        alert('Error approving. Try again.');
         progressDiv.style.display = 'none';
       }
     });
 
+    // ---- Reject ----
     document.getElementById('rejectBtn').addEventListener('click', async function() {
-      if (!currentApp || !confirm('Reject this application?')) return;
-      await fetch(`/api/applications/${currentRef}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ ...currentApp, status: 'rejected' })
-      });
-      document.getElementById('reviewModal').style.display = 'none';
-      loadDashboard();
+      if (!currentApp) return;
+      if (!confirm('Reject this application?')) return;
+      const updated = {
+        ...currentApp,
+        status: 'rejected'
+      };
+      try {
+        await fetch(`/api/applications/${currentRef}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(updated)
+        });
+        document.getElementById('reviewModal').style.display = 'none';
+        loadDashboard();
+      } catch (err) {
+        alert('Error rejecting.');
+      }
     });
 
-    window.closeModal = function(id) { document.getElementById(id).style.display = 'none'; };
-    window.onclick = function(event) { if (event.target.classList.contains('modal')) event.target.style.display = 'none'; };
+    // ---- Close modal helpers ----
+    window.closeModal = function(id) {
+      document.getElementById(id).style.display = 'none';
+    };
+
+    window.onclick = function(event) {
+      if (event.target.classList.contains('modal')) {
+        event.target.style.display = 'none';
+      }
+    };
+
+    // ---- Refresh & filters ----
     document.getElementById('refreshBtn').addEventListener('click', loadDashboard);
     document.getElementById('searchInput').addEventListener('input', loadDashboard);
     document.getElementById('filterStatus').addEventListener('change', loadDashboard);
