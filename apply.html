@@ -8,8 +8,7 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 </head>
 <body>
-
-  <!-- ====== Consistent Navigation ====== -->
+  <!-- Navigation -->
   <nav class="navbar">
     <div class="nav-container">
       <a href="index.html" class="nav-logo">CertifyHub</a>
@@ -35,15 +34,24 @@
       </form>
       <div id="progressContainer" style="display:none; margin-top:20px;">
         <div style="background:#e2e8f0; border-radius:8px; height:20px; overflow:hidden;">
-          <div id="progressBar" style="width:0%; height:100%; background:#1e293b; transition:width 0.3s;"></div>
+          <div id="progressBar" style="width:0%; height:100%; background:#0f172a; transition:width 0.3s;"></div>
         </div>
         <p id="progressText" style="margin-top:5px; color:#475569;">Generating PDF...</p>
       </div>
     </div>
   </section>
 
+  <footer>
+    <div class="container">
+      <p>&copy; 2026 CertifyHub. All rights reserved.</p>
+    </div>
+  </footer>
+
   <script src="script.js"></script>
   <script>
+    // ============================================================
+    // DYNAMIC FORM – 10 fields per certificate type
+    // ============================================================
     document.addEventListener('DOMContentLoaded', function() {
       const params = new URLSearchParams(window.location.search);
       const type = params.get('type') || 'academic';
@@ -58,7 +66,7 @@
       };
       typeDisplay.textContent = `Certificate Type: ${typeNames[type] || type}`;
 
-      // ---------- Expanded field sets ----------
+      // ---------- Extended field sets ----------
       const fieldSets = {
         academic: [
           { name: 'fullName', label: 'Full Name', required: true, type: 'text', placeholder: 'e.g. John Doe' },
@@ -69,7 +77,8 @@
           { name: 'gpa', label: 'GPA (out of 4.0)', required: false, type: 'text', placeholder: '3.8' },
           { name: 'major', label: 'Major / Field of Study', required: true, type: 'text', placeholder: 'Computer Science' },
           { name: 'graduationYear', label: 'Year of Graduation', required: true, type: 'number', placeholder: '2025' },
-          { name: 'address', label: 'Mailing Address', required: true, type: 'text', placeholder: '123 Main St, City, Country' }
+          { name: 'address', label: 'Mailing Address', required: true, type: 'text', placeholder: '123 Main St, City, Country' },
+          { name: 'additional', label: 'Additional Notes (optional)', required: false, type: 'text', placeholder: 'Any other info' }
         ],
         professional: [
           { name: 'fullName', label: 'Full Name', required: true, type: 'text', placeholder: 'e.g. Jane Smith' },
