@@ -8,10 +8,14 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 </head>
 <body>
+
+  <!-- ====== Consistent Navigation ====== -->
   <nav class="navbar">
     <div class="nav-container">
-      <a href="index.html" class="nav-logo">Certify<span>Hub</span></a>
-      <button class="nav-toggle" id="navToggle">...</button>
+      <a href="index.html" class="nav-logo">CertifyHub</a>
+      <button class="nav-toggle" id="navToggle" aria-label="Toggle navigation">
+        <span></span><span></span><span></span>
+      </button>
       <ul class="nav-menu" id="navMenu">
         <li><a href="index.html">Home</a></li>
         <li><a href="status.html">Track</a></li>
@@ -24,16 +28,16 @@
   <section class="form-section">
     <div class="container">
       <h2>Apply for Certificate</h2>
-      <p id="certTypeDisplay"></p>
+      <p id="certTypeDisplay" style="font-weight:500; color:#475569;"></p>
       <form id="applyForm">
         <div id="dynamicFields"></div>
         <button type="submit" class="btn btn-primary">Submit Application</button>
       </form>
       <div id="progressContainer" style="display:none; margin-top:20px;">
-        <div style="background:#eee; border-radius:8px; height:20px; overflow:hidden;">
-          <div id="progressBar" style="width:0%; height:100%; background:#4CAF50; transition:width 0.3s;"></div>
+        <div style="background:#e2e8f0; border-radius:8px; height:20px; overflow:hidden;">
+          <div id="progressBar" style="width:0%; height:100%; background:#1e293b; transition:width 0.3s;"></div>
         </div>
-        <p id="progressText" style="margin-top:5px;">Generating PDF...</p>
+        <p id="progressText" style="margin-top:5px; color:#475569;">Generating PDF...</p>
       </div>
     </div>
   </section>
@@ -54,34 +58,60 @@
       };
       typeDisplay.textContent = `Certificate Type: ${typeNames[type] || type}`;
 
+      // ---------- Expanded field sets ----------
       const fieldSets = {
         academic: [
-          { name: 'fullName', label: 'Full Name', required: true, type: 'text' },
-          { name: 'email', label: 'Email Address', required: true, type: 'email' },
-          { name: 'institution', label: 'Institution', required: true, type: 'text' },
-          { name: 'gpa', label: 'GPA', required: false, type: 'text' }
+          { name: 'fullName', label: 'Full Name', required: true, type: 'text', placeholder: 'e.g. John Doe' },
+          { name: 'email', label: 'Email Address', required: true, type: 'email', placeholder: 'john@example.com' },
+          { name: 'phone', label: 'Phone Number', required: true, type: 'tel', placeholder: '+1 234 567 890' },
+          { name: 'dob', label: 'Date of Birth', required: true, type: 'date' },
+          { name: 'institution', label: 'Institution / University', required: true, type: 'text', placeholder: 'Harvard University' },
+          { name: 'gpa', label: 'GPA (out of 4.0)', required: false, type: 'text', placeholder: '3.8' },
+          { name: 'major', label: 'Major / Field of Study', required: true, type: 'text', placeholder: 'Computer Science' },
+          { name: 'graduationYear', label: 'Year of Graduation', required: true, type: 'number', placeholder: '2025' },
+          { name: 'address', label: 'Mailing Address', required: true, type: 'text', placeholder: '123 Main St, City, Country' }
         ],
         professional: [
-          { name: 'fullName', label: 'Full Name', required: true, type: 'text' },
-          { name: 'email', label: 'Email Address', required: true, type: 'email' },
-          { name: 'company', label: 'Company', required: true, type: 'text' },
-          { name: 'position', label: 'Position', required: true, type: 'text' }
+          { name: 'fullName', label: 'Full Name', required: true, type: 'text', placeholder: 'e.g. Jane Smith' },
+          { name: 'email', label: 'Email Address', required: true, type: 'email', placeholder: 'jane@company.com' },
+          { name: 'phone', label: 'Phone Number', required: true, type: 'tel', placeholder: '+1 987 654 321' },
+          { name: 'dob', label: 'Date of Birth', required: true, type: 'date' },
+          { name: 'company', label: 'Company / Organization', required: true, type: 'text', placeholder: 'Google Inc.' },
+          { name: 'position', label: 'Job Title / Position', required: true, type: 'text', placeholder: 'Senior Developer' },
+          { name: 'yearsOfExperience', label: 'Years of Experience', required: true, type: 'number', placeholder: '5' },
+          { name: 'industry', label: 'Industry / Sector', required: true, type: 'text', placeholder: 'Technology' },
+          { name: 'achievements', label: 'Key Achievements (brief)', required: true, type: 'text', placeholder: 'Led team to deliver X project' },
+          { name: 'address', label: 'Work Address', required: true, type: 'text', placeholder: '1600 Amphitheatre Pkwy, CA' }
         ],
         community: [
-          { name: 'fullName', label: 'Full Name', required: true, type: 'text' },
-          { name: 'email', label: 'Email Address', required: true, type: 'email' },
-          { name: 'organization', label: 'Organization', required: true, type: 'text' },
-          { name: 'hours', label: 'Volunteer Hours', required: false, type: 'number' }
+          { name: 'fullName', label: 'Full Name', required: true, type: 'text', placeholder: 'e.g. Maria Garcia' },
+          { name: 'email', label: 'Email Address', required: true, type: 'email', placeholder: 'maria@community.org' },
+          { name: 'phone', label: 'Phone Number', required: true, type: 'tel', placeholder: '+1 555 123 456' },
+          { name: 'dob', label: 'Date of Birth', required: true, type: 'date' },
+          { name: 'organization', label: 'Organization / NGO', required: true, type: 'text', placeholder: 'Red Cross' },
+          { name: 'role', label: 'Your Role / Title', required: true, type: 'text', placeholder: 'Volunteer Coordinator' },
+          { name: 'hours', label: 'Total Volunteer Hours', required: true, type: 'number', placeholder: '200' },
+          { name: 'project', label: 'Project / Initiative Name', required: true, type: 'text', placeholder: 'Clean Water Drive' },
+          { name: 'impact', label: 'Impact / Results (brief)', required: true, type: 'text', placeholder: 'Provided clean water to 500 families' },
+          { name: 'address', label: 'Your Address', required: true, type: 'text', placeholder: '456 Oak St, City' }
         ],
         training: [
-          { name: 'fullName', label: 'Full Name', required: true, type: 'text' },
-          { name: 'email', label: 'Email Address', required: true, type: 'email' },
-          { name: 'program', label: 'Program Name', required: true, type: 'text' },
-          { name: 'completionDate', label: 'Completion Date', required: true, type: 'date' }
+          { name: 'fullName', label: 'Full Name', required: true, type: 'text', placeholder: 'e.g. David Lee' },
+          { name: 'email', label: 'Email Address', required: true, type: 'email', placeholder: 'david@training.com' },
+          { name: 'phone', label: 'Phone Number', required: true, type: 'tel', placeholder: '+1 321 654 987' },
+          { name: 'dob', label: 'Date of Birth', required: true, type: 'date' },
+          { name: 'program', label: 'Training Program Name', required: true, type: 'text', placeholder: 'Advanced Data Science' },
+          { name: 'provider', label: 'Training Provider / Institute', required: true, type: 'text', placeholder: 'Coursera' },
+          { name: 'startDate', label: 'Start Date', required: true, type: 'date' },
+          { name: 'completionDate', label: 'Completion Date', required: true, type: 'date' },
+          { name: 'duration', label: 'Duration (weeks)', required: true, type: 'number', placeholder: '12' },
+          { name: 'certification', label: 'Certification Earned (if any)', required: false, type: 'text', placeholder: 'Python for Data Science' }
         ]
       };
 
       const fields = fieldSets[type] || fieldSets.academic;
+
+      // Build form
       fields.forEach(f => {
         const div = document.createElement('div');
         div.className = 'form-group';
@@ -93,12 +123,14 @@
         input.id = f.name;
         input.name = f.name;
         if (f.required) input.required = true;
+        if (f.placeholder) input.placeholder = f.placeholder;
         input.className = 'form-control';
         div.appendChild(label);
         div.appendChild(input);
         fieldsContainer.appendChild(div);
       });
 
+      // Reference number generator
       function generateRef() {
         const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
         let ref = 'REF-';
@@ -108,8 +140,10 @@
         return ref;
       }
 
+      // Submit handler
       document.getElementById('applyForm').addEventListener('submit', async function(e) {
         e.preventDefault();
+        // Validate required fields
         const inputs = this.querySelectorAll('input[required]');
         let valid = true;
         inputs.forEach(inp => {
@@ -121,8 +155,9 @@
           const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
           if (!emailPattern.test(emailInput.value)) { valid = false; emailInput.style.borderColor = 'red'; alert('Invalid email'); }
         }
-        if (!valid) { alert('Fill all required fields.'); return; }
+        if (!valid) { alert('Please fill in all required fields.'); return; }
 
+        // Gather data
         const data = { type };
         fields.forEach(f => {
           const el = document.getElementById(f.name);
@@ -163,7 +198,7 @@
           doc.text(`Certificate Type: ${typeNames[type] || type}`, 20, 70);
           doc.text(`Submission Date: ${saved.submissionDate}`, 20, 80);
           doc.text('Status: Pending', 20, 90);
-          doc.text('Thank you for your application.', 20, 110);
+          doc.text('Thank you for your application. You will be notified once reviewed.', 20, 110);
 
           progressBar.style.width = '80%';
           progressText.textContent = 'Downloading receipt...';
@@ -185,6 +220,7 @@
         } catch (err) {
           alert('Error submitting application. Try again.');
           progressContainer.style.display = 'none';
+          console.error(err);
         }
       });
     });
