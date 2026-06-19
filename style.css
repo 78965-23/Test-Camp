@@ -10,25 +10,26 @@ body {
   background: #f8fafc;
   color: #1e293b;
   line-height: 1.6;
-  padding: 20px;          /* ← adds space around entire content */
 }
 
-.container {
+/* Main container – horizontal padding for all content */
+.container,
+.nav-container {
   max-width: 1200px;
   margin: 0 auto;
-  padding: 0 24px;        /* ← horizontal padding inside containers */
+  padding: 0 24px;         /* consistent left/right spacing */
 }
 
 /* Navigation */
 .navbar {
   background: #ffffff;
   border-bottom: 1px solid #e2e8f0;
-  padding: 16px 0;        /* ← more vertical breathing */
+  padding: 16px 0;         /* vertical only, horizontal handled by .nav-container */
   position: sticky;
   top: 0;
   z-index: 100;
-  border-radius: 3px;     /* ← 3px radius */
-  margin-bottom: 24px;    /* ← distance from hero */
+  border-radius: 3px;
+  margin-bottom: 24px;
 }
 
 .nav-container {
@@ -85,12 +86,12 @@ body {
 
 /* Hero */
 .hero {
-  padding: 48px 20px;     /* ← internal spacing */
+  padding: 48px 24px;      /* horizontal padding added */
   text-align: center;
   max-width: 800px;
-  margin: 0 auto 32px;    /* ← bottom margin */
+  margin: 0 auto 32px;
   background: #ffffff;
-  border-radius: 3px;     /* ← 3px radius */
+  border-radius: 3px;
   box-shadow: 0 1px 3px rgba(0,0,0,0.06);
 }
 
@@ -108,7 +109,7 @@ body {
 
 /* Certificate Cards */
 .certificates-section {
-  padding: 24px 0 48px;   /* ← top/bottom spacing */
+  padding: 24px 0 48px;
 }
 
 .section-title {
@@ -131,7 +132,7 @@ body {
 
 .cert-card {
   background: #ffffff;
-  border-radius: 3px;      /* ← 3px radius */
+  border-radius: 3px;
   padding: 28px 20px;
   text-align: center;
   box-shadow: 0 2px 8px rgba(0,0,0,0.06);
@@ -144,8 +145,9 @@ body {
   box-shadow: 0 8px 24px rgba(0,0,0,0.08);
 }
 
+/* Hide empty card-icon (no emojis) */
 .card-icon {
-  display: none;          /* still hidden – no emojis */
+  display: none;
 }
 
 .cert-card h3 {
@@ -190,8 +192,8 @@ footer {
   text-align: center;
   color: #64748b;
   font-size: 0.9rem;
-  border-radius: 3px;      /* ← 3px radius */
-  margin-top: 32px;        /* ← distance from cards */
+  border-radius: 3px;
+  margin-top: 32px;
 }
 
 /* Fade-in animation */
@@ -208,10 +210,6 @@ footer {
 
 /* Responsive */
 @media (max-width: 768px) {
-  body {
-    padding: 12px;        /* ← smaller padding on mobile */
-  }
-
   .nav-toggle {
     display: flex;
   }
@@ -242,8 +240,13 @@ footer {
     grid-template-columns: 1fr 1fr;
   }
 
-  .container {
-    padding: 0 16px;
+  .container,
+  .nav-container {
+    padding: 0 16px;      /* smaller padding on mobile */
+  }
+
+  .hero {
+    padding: 32px 16px;
   }
 }
 
