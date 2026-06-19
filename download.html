@@ -53,10 +53,11 @@
 
   <script src="script.js"></script>
   <script>
-    document.getElementById('downloadForm').addEventListener('submit', async function(e) {
+    document.getElementById('downloadForm').addEventListener('submit', function(e) {
       e.preventDefault();
       const input = document.getElementById('certInput').value.trim();
       if (!input) return;
+      
       const resultDiv = document.getElementById('result');
       const progressContainer = document.getElementById('progressContainer');
       const progressBar = document.getElementById('progressBar');
@@ -66,30 +67,33 @@
       progressBar.style.width = '0%';
       progressText.textContent = 'Searching...';
 
+      // Get applications from localStorage
+      const apps = JSON.parse(localStorage.getItem('applications') || '[]');
+      const app = apps.find(a => a.referenceNumber === input || a.certificateNumber === input);
+      
+      if (!app) {
+        progressContainer.style.display = 'none';
+        resultDiv.style.display = 'block';
+        resultDiv.innerHTML = '<p style="color:#ef4444;">❌ No application found.</p>';
+        return;
+      }
+      
+      if (app.status !== 'approved') {
+        progressContainer.style.display = 'none';
+        resultDiv.style.display = 'block';
+        resultDiv.innerHTML = '<p style="color:#f59e0b;">⏳ Application not approved yet. Status: ' + app.status + '</p>';
+        return;
+      }
+
+      progressBar.style.width = '30%';
+      progressText.textContent = 'Generating certificate...';
+
       try {
-        const res = await fetch('/api/applications');
-        const apps = await res.json();
-        const app = apps.find(a => a.referenceNumber === input || a.certificateNumber === input);
-        if (!app) {
-          progressContainer.style.display = 'none';
-          resultDiv.style.display = 'block';
-          resultDiv.innerHTML = '<p style="color:#ef4444;">No application found.</p>';
-          return;
-        }
-        if (app.status !== 'approved') {
-          progressContainer.style.display = 'none';
-          resultDiv.style.display = 'block';
-          resultDiv.innerHTML = '<p style="color:#f59e0b;">Application not approved yet.</p>';
-          return;
-        }
-
-        progressBar.style.width = '30%';
-        progressText.textContent = 'Generating certificate...';
-
         const { jsPDF } = window.jspdf;
         const doc = new jsPDF('landscape');
         const pageWidth = doc.internal.pageSize.getWidth();
         const pageHeight = doc.internal.pageSize.getHeight();
+        
         doc.setDrawColor(0, 100, 200);
         doc.setLineWidth(2);
         doc.rect(10, 10, pageWidth - 20, pageHeight - 20);
@@ -128,14 +132,14 @@
         URL.revokeObjectURL(url);
 
         progressBar.style.width = '100%';
-        progressText.textContent = 'Download complete!';
+        progressText.textContent = '✅ Download complete!';
         setTimeout(() => { progressContainer.style.display = 'none'; }, 2000);
 
       } catch (err) {
         console.error(err);
         progressContainer.style.display = 'none';
         resultDiv.style.display = 'block';
-        resultDiv.innerHTML = '<p style="color:#ef4444;">Error. Try again.</p>';
+        resultDiv.innerHTML = '<p style="color:#ef4444;">❌ Error generating certificate. Try again.</p>';
       }
     });
   </script>
