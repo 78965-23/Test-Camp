@@ -6,7 +6,9 @@ const path = require('path');
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-// Middleware
+// ============================================================
+// MIDDLEWARE – MUST COME FIRST
+// ============================================================
 app.use(cors());
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true }));
@@ -14,17 +16,17 @@ app.use(express.urlencoded({ extended: true }));
 // Serve static files from root
 app.use(express.static(__dirname));
 
-// Data file path
+// ============================================================
+// DATA SETUP
+// ============================================================
 const DATA_DIR = process.env.RENDER_DISK_PATH || path.join(__dirname, 'data');
 const DATA_FILE = path.join(DATA_DIR, 'data.json');
 
-// Ensure data directory exists
 if (!fs.existsSync(DATA_DIR)) {
   fs.mkdirSync(DATA_DIR, { recursive: true });
-  console.log('Created data directory:', DATA_DIR);
+  console.log('✅ Created data directory:', DATA_DIR);
 }
 
-// Helper functions
 function readData() {
   try {
     const raw = fs.readFileSync(DATA_FILE, 'utf8');
@@ -39,7 +41,7 @@ function writeData(data) {
 }
 
 // ============================================================
-// API ROUTES – MUST COME BEFORE THE CATCH-ALL
+// API ROUTES – MUST BE BEFORE THE CATCH-ALL
 // ============================================================
 
 // GET all applications
@@ -53,35 +55,41 @@ app.get('/api/applications', (req, res) => {
   }
 });
 
-// POST new application
+// POST new application – THIS IS THE ONE YOU NEED
 app.post('/api/applications', (req, res) => {
-  console.log('POST /api/applications received');
+  console.log('📥 POST /api/applications received');
+  console.log('📦 Body:', req.body);
+  
   try {
     const apps = readData();
     const newApp = req.body;
 
     // Validate required fields
     if (!newApp.referenceNumber) {
+      console.log('❌ Missing referenceNumber');
       return res.status(400).json({ error: 'Reference number is required' });
     }
     if (!newApp.fullName) {
+      console.log('❌ Missing fullName');
       return res.status(400).json({ error: 'Full name is required' });
     }
     if (!newApp.type) {
+      console.log('❌ Missing type');
       return res.status(400).json({ error: 'Certificate type is required' });
     }
 
     // Check for duplicate
     if (apps.some(a => a.referenceNumber === newApp.referenceNumber)) {
+      console.log('❌ Duplicate reference number:', newApp.referenceNumber);
       return res.status(409).json({ error: 'Duplicate reference number' });
     }
 
     apps.push(newApp);
     writeData(apps);
-    console.log('Application saved:', newApp.referenceNumber);
+    console.log('✅ Application saved:', newApp.referenceNumber);
     res.status(201).json(newApp);
   } catch (err) {
-    console.error('POST error:', err);
+    console.error('❌ POST error:', err);
     res.status(500).json({ error: 'Internal server error: ' + err.message });
   }
 });
@@ -129,11 +137,13 @@ app.get('*', (req, res) => {
   res.sendFile(path.join(__dirname, 'index.html'));
 });
 
-// Start server
+// ============================================================
+// START SERVER
+// ============================================================
 app.listen(PORT, () => {
-  console.log(`========================================`);
-  console.log(`Server running on http://localhost:${PORT}`);
-  console.log(`Data directory: ${DATA_DIR}`);
-  console.log(`Data file: ${DATA_FILE}`);
-  console.log(`========================================`);
+  console.log('========================================');
+  console.log(`🚀 Server running on http://localhost:${PORT}`);
+  console.log(`📁 Data directory: ${DATA_DIR}`);
+  console.log(`📄 Data file: ${DATA_FILE}`);
+  console.log('========================================');
 });
