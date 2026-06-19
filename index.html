@@ -11,7 +11,8 @@
   <!-- Navigation -->
   <nav class="navbar">
     <div class="nav-container">
-      <a href="index.html" class="nav-logo">Certify<span>Hub</span></a>
+      <!-- Plain text, no extra logo styling -->
+      <a href="index.html" class="nav-logo">CertifyHub</a>
       <button class="nav-toggle" id="navToggle" aria-label="Toggle navigation">
         <span></span><span></span><span></span>
       </button>
@@ -24,17 +25,13 @@
     </div>
   </nav>
 
-  <!-- Hero Section (NO Apply Now) -->
+  <!-- Hero Section (no icons) -->
   <section class="hero">
     <div class="hero-content">
       <h1>Your Achievements,<br />Certified &amp; Secure</h1>
       <p>Apply for your official certificate in minutes. Track, download, and manage everything in one place.</p>
     </div>
-    <div class="hero-graphic">
-      <div class="floating-icon">🏆</div>
-      <div class="floating-icon">📜</div>
-      <div class="floating-icon">✅</div>
-    </div>
+    <!-- hero-graphic removed entirely -->
   </section>
 
   <!-- Certificate Cards -->
@@ -44,25 +41,26 @@
       <p class="section-subtitle fade-in">Select the type of certificate you'd like to apply for.</p>
       <div class="cards-grid">
         <div class="cert-card fade-in">
-          <div class="card-icon">🎓</div>
+          <!-- Icon div remains, but empty (no emoji) -->
+          <div class="card-icon"></div>
           <h3>Academic Excellence</h3>
           <p>Recognizing outstanding academic performance.</p>
           <a href="apply.html?type=academic" class="btn btn-primary">Apply</a>
         </div>
         <div class="cert-card fade-in">
-          <div class="card-icon">💼</div>
+          <div class="card-icon"></div>
           <h3>Professional Achievement</h3>
           <p>For professionals who have demonstrated exceptional skill.</p>
           <a href="apply.html?type=professional" class="btn btn-primary">Apply</a>
         </div>
         <div class="cert-card fade-in">
-          <div class="card-icon">🌍</div>
+          <div class="card-icon"></div>
           <h3>Community Service</h3>
           <p>Honoring individuals who have made a meaningful impact.</p>
           <a href="apply.html?type=community" class="btn btn-primary">Apply</a>
         </div>
         <div class="cert-card fade-in">
-          <div class="card-icon">📘</div>
+          <div class="card-icon"></div>
           <h3>Training Program</h3>
           <p>For successful completion of a professional training program.</p>
           <a href="apply.html?type=training" class="btn btn-primary">Apply</a>
@@ -79,7 +77,7 @@
 
   <script src="script.js"></script>
   <script>
-    // Fade-in observer (homepage only)
+    // Fade-in observer (unchanged)
     document.addEventListener('DOMContentLoaded', function() {
       const fadeEls = document.querySelectorAll('.fade-in');
       const observer = new IntersectionObserver((entries) => {
