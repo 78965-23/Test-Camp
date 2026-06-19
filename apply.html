@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Apply for Certificate</title>
+  <link rel="stylesheet" href="style.css" />
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+</head>
+<body>
+  <nav class="navbar">
+    <div class="nav-container">
+      <a href="index.html" class="nav-logo">Certify<span>Hub</span></a>
+      <button class="nav-toggle" id="navToggle">...</button>
+      <ul class="nav-menu" id="navMenu">
+        <li><a href="index.html">Home</a></li>
+        <li><a href="status.html">Track</a></li>
+        <li><a href="download.html">Download</a></li>
+        <li><a href="admin.html">Admin</a></li>
+      </ul>
+    </div>
+  </nav>
+
+  <section class="form-section">
+    <div class="container">
+      <h2>Apply for Certificate</h2>
+      <p id="certTypeDisplay"></p>
+      <form id="applyForm">
+        <div id="dynamicFields"></div>
+        <button type="submit" class="btn btn-primary">Submit Application</button>
+      </form>
+      <div id="progressContainer" style="display:none; margin-top:20px;">
+        <div style="background:#eee; border-radius:8px; height:20px; overflow:hidden;">
+          <div id="progressBar" style="width:0%; height:100%; background:#4CAF50; transition:width 0.3s;"></div>
+        </div>
+        <p id="progressText" style="margin-top:5px;">Generating PDF...</p>
+      </div>
+    </div>
+  </section>
+
+  <script src="script.js"></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', function() {
+      const params = new URLSearchParams(window.location.search);
+      const type = params.get('type') || 'academic';
+      const fieldsContainer = document.getElementById('dynamicFields');
+      const typeDisplay = document.getElementById('certTypeDisplay');
+
+      const typeNames = {
+        academic: 'Academic Excellence',
+        professional: 'Professional Achievement',
+        community: 'Community Service',
+        training: 'Training Program'
+      };
+      typeDisplay.textContent = `Certificate Type: ${typeNames[type] || type}`;
+
+      const fieldSets = {
+        academic: [
+          { name: 'fullName', label: 'Full Name', required: true, type: 'text' },
+          { name: 'email', label: 'Email Address', required: true, type: 'email' },
+          { name: 'institution', label: 'Institution', required: true, type: 'text' },
+          { name: 'gpa', label: 'GPA', required: false, type: 'text' }
+        ],
+        professional: [
+          { name: 'fullName', label: 'Full Name', required: true, type: 'text' },
+          { name: 'email', label: 'Email Address', required: true, type: 'email' },
+          { name: 'company', label: 'Company', required: true, type: 'text' },
+          { name: 'position', label: 'Position', required: true, type: 'text' }
+        ],
+        community: [
+          { name: 'fullName', label: 'Full Name', required: true, type: 'text' },
+          { name: 'email', label: 'Email Address', required: true, type: 'email' },
+          { name: 'organization', label: 'Organization', required: true, type: 'text' },
+          { name: 'hours', label: 'Volunteer Hours', required: false, type: 'number' }
+        ],
+        training: [
+          { name: 'fullName', label: 'Full Name', required: true, type: 'text' },
+          { name: 'email', label: 'Email Address', required: true, type: 'email' },
+          { name: 'program', label: 'Program Name', required: true, type: 'text' },
+          { name: 'completionDate', label: 'Completion Date', required: true, type: 'date' }
+        ]
+      };
+
+      const fields = fieldSets[type] || fieldSets.academic;
+      fields.forEach(f => {
+        const div = document.createElement('div');
+        div.className = 'form-group';
+        const label = document.createElement('label');
+        label.setAttribute('for', f.name);
+        label.textContent = f.label + (f.required ? ' *' : '');
+        const input = document.createElement('input');
+        input.type = f.type;
+        input.id = f.name;
+        input.name = f.name;
+        if (f.required) input.required = true;
+        input.className = 'form-control';
+        div.appendChild(label);
+        div.appendChild(input);
+        fieldsContainer.appendChild(div);
+      });
+
+      function generateRef() {
+        const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+        let ref = 'REF-';
+        for (let i = 0; i < 8; i++) ref += chars.charAt(Math.floor(Math.random() * chars.length));
+        ref += '-';
+        for (let i = 0; i < 5; i++) ref += chars.charAt(Math.floor(Math.random() * chars.length));
+        return ref;
+      }
+
+      document.getElementById('applyForm').addEventListener('submit', async function(e) {
+        e.preventDefault();
+        const inputs = this.querySelectorAll('input[required]');
+        let valid = true;
+        inputs.forEach(inp => {
+          if (!inp.value.trim()) { valid = false; inp.style.borderColor = 'red'; }
+          else inp.style.borderColor = '';
+        });
+        const emailInput = document.getElementById('email');
+        if (emailInput && emailInput.value) {
+          const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+          if (!emailPattern.test(emailInput.value)) { valid = false; emailInput.style.borderColor = 'red'; alert('Invalid email'); }
+        }
+        if (!valid) { alert('Fill all required fields.'); return; }
+
+        const data = { type };
+        fields.forEach(f => {
+          const el = document.getElementById(f.name);
+          if (el) data[f.name] = el.value.trim();
+        });
+        const ref = generateRef();
+        data.referenceNumber = ref;
+        data.status = 'pending';
+        data.submissionDate = new Date().toISOString().split('T')[0];
+        data.certificateNumber = '';
+
+        const progressContainer = document.getElementById('progressContainer');
+        const progressBar = document.getElementById('progressBar');
+        const progressText = document.getElementById('progressText');
+        progressContainer.style.display = 'block';
+        progressBar.style.width = '0%';
+        progressText.textContent = 'Saving application...';
+
+        try {
+          const response = await fetch('/api/applications', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(data)
+          });
+          if (!response.ok) throw new Error('Server error');
+          const saved = await response.json();
+
+          progressBar.style.width = '50%';
+          progressText.textContent = 'Generating receipt PDF...';
+
+          const { jsPDF } = window.jspdf;
+          const doc = new jsPDF();
+          doc.setFontSize(16);
+          doc.text('Certificate Application Receipt', 20, 30);
+          doc.setFontSize(12);
+          doc.text(`Reference Number: ${saved.referenceNumber}`, 20, 50);
+          doc.text(`Applicant: ${saved.fullName || 'N/A'}`, 20, 60);
+          doc.text(`Certificate Type: ${typeNames[type] || type}`, 20, 70);
+          doc.text(`Submission Date: ${saved.submissionDate}`, 20, 80);
+          doc.text('Status: Pending', 20, 90);
+          doc.text('Thank you for your application.', 20, 110);
+
+          progressBar.style.width = '80%';
+          progressText.textContent = 'Downloading receipt...';
+
+          const pdfBlob = doc.output('blob');
+          const url = URL.createObjectURL(pdfBlob);
+          const link = document.createElement('a');
+          link.href = url;
+          link.download = `receipt-${saved.referenceNumber}.pdf`;
+          document.body.appendChild(link);
+          link.click();
+          document.body.removeChild(link);
+          URL.revokeObjectURL(url);
+
+          progressBar.style.width = '100%';
+          progressText.textContent = 'Done! Receipt downloaded.';
+          setTimeout(() => { progressContainer.style.display = 'none'; this.reset(); }, 2000);
+
+        } catch (err) {
+          alert('Error submitting application. Try again.');
+          progressContainer.style.display = 'none';
+        }
+      });
+    });
+  </script>
+</body>
+</html>
