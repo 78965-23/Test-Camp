@@ -133,10 +133,19 @@
   <script src="script.js"></script>
   <script>
     // ============================================================
-    // ADMIN LOGIC – with Logout & Toast
+    // ADMIN LOGIC – localStorage version
     // ============================================================
     let currentApp = null;
     let currentRef = null;
+
+    // Helper to get apps from localStorage
+    function getApps() {
+      return JSON.parse(localStorage.getItem('applications') || '[]');
+    }
+
+    function saveApps(apps) {
+      localStorage.setItem('applications', JSON.stringify(apps));
+    }
 
     // ---- Login ----
     document.getElementById('loginForm').addEventListener('submit', function(e) {
@@ -155,14 +164,9 @@
     // ---- Logout with Toast ----
     document.getElementById('logoutBtn').addEventListener('click', function() {
       const toast = document.getElementById('logoutToast');
-      // Show toast
       toast.classList.add('show');
-
-      // After 2 seconds, complete logout
       setTimeout(() => {
-        // Hide toast
         toast.classList.remove('show');
-        // Hide dashboard, show login
         document.getElementById('dashboardDiv').style.display = 'none';
         document.getElementById('loginDiv').style.display = 'block';
         document.getElementById('passwordInput').value = '';
@@ -177,15 +181,10 @@
     });
 
     // ---- Load Dashboard ----
-    async function loadDashboard() {
-      try {
-        const res = await fetch('/api/applications');
-        const apps = await res.json();
-        updateStats(apps);
-        renderTable(apps);
-      } catch (err) {
-        console.error('Error loading data:', err);
-      }
+    function loadDashboard() {
+      const apps = getApps();
+      updateStats(apps);
+      renderTable(apps);
     }
 
     function updateStats(apps) {
@@ -228,9 +227,8 @@
     }
 
     // ---- View Modal ----
-    window.viewApp = async function(ref) {
-      const res = await fetch('/api/applications');
-      const apps = await res.json();
+    window.viewApp = function(ref) {
+      const apps = getApps();
       const app = apps.find(a => a.referenceNumber === ref);
       if (!app) return;
       const content = document.getElementById('viewContent');
@@ -245,9 +243,8 @@
     };
 
     // ---- Review Modal ----
-    window.reviewApp = async function(ref) {
-      const res = await fetch('/api/applications');
-      const apps = await res.json();
+    window.reviewApp = function(ref) {
+      const apps = getApps();
       const app = apps.find(a => a.referenceNumber === ref);
       if (!app) return;
       currentApp = app;
@@ -268,7 +265,7 @@
     }
 
     // ---- Approve ----
-    document.getElementById('finalApproveBtn').addEventListener('click', async function() {
+    document.getElementById('finalApproveBtn').addEventListener('click', function() {
       if (!currentApp) return;
       const progressDiv = document.getElementById('reviewProgress');
       const progressBar = document.getElementById('reviewProgressBar');
@@ -278,55 +275,55 @@
       progressText.textContent = 'Generating certificate number...';
 
       const certNum = generateCertNum();
-      const updated = {
-        ...currentApp,
+      const apps = getApps();
+      const index = apps.findIndex(a => a.referenceNumber === currentRef);
+      if (index === -1) {
+        alert('Application not found');
+        return;
+      }
+      
+      apps[index] = {
+        ...apps[index],
         status: 'approved',
         certificateNumber: certNum,
         fullName: document.getElementById('editName').value || currentApp.fullName,
         type: document.getElementById('editTitle').value || currentApp.type
       };
+      
       progressBar.style.width = '40%';
-      progressText.textContent = 'Updating server...';
-
-      try {
-        const response = await fetch(`/api/applications/${currentRef}`, {
-          method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(updated)
-        });
-        if (!response.ok) throw new Error('Update failed');
-        progressBar.style.width = '80%';
-        progressText.textContent = 'Done!';
-        setTimeout(() => {
-          progressDiv.style.display = 'none';
-          document.getElementById('reviewModal').style.display = 'none';
-          loadDashboard();
-        }, 1000);
-      } catch (err) {
-        alert('Error approving. Try again.');
+      progressText.textContent = 'Saving...';
+      
+      saveApps(apps);
+      
+      progressBar.style.width = '80%';
+      progressText.textContent = 'Done!';
+      setTimeout(() => {
         progressDiv.style.display = 'none';
-      }
+        document.getElementById('reviewModal').style.display = 'none';
+        loadDashboard();
+      }, 1000);
     });
 
     // ---- Reject ----
-    document.getElementById('rejectBtn').addEventListener('click', async function() {
+    document.getElementById('rejectBtn').addEventListener('click', function() {
       if (!currentApp) return;
       if (!confirm('Reject this application?')) return;
-      const updated = {
-        ...currentApp,
+      
+      const apps = getApps();
+      const index = apps.findIndex(a => a.referenceNumber === currentRef);
+      if (index === -1) {
+        alert('Application not found');
+        return;
+      }
+      
+      apps[index] = {
+        ...apps[index],
         status: 'rejected'
       };
-      try {
-        await fetch(`/api/applications/${currentRef}`, {
-          method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(updated)
-        });
-        document.getElementById('reviewModal').style.display = 'none';
-        loadDashboard();
-      } catch (err) {
-        alert('Error rejecting.');
-      }
+      
+      saveApps(apps);
+      document.getElementById('reviewModal').style.display = 'none';
+      loadDashboard();
     });
 
     // ---- Close modal helpers ----
