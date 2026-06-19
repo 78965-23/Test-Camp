@@ -8,7 +8,7 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 </head>
 <body>
-  <!-- ====== Consistent Navigation ====== -->
+  <!-- Navigation -->
   <nav class="navbar">
     <div class="nav-container">
       <a href="index.html" class="nav-logo">CertifyHub</a>
@@ -24,6 +24,14 @@
     </div>
   </nav>
 
+  <!-- Toast Container -->
+  <div class="toast-container" id="toastContainer">
+    <div class="toast" id="logoutToast">
+      <span class="toast-icon">✅</span>
+      <span class="toast-message">Logout successful!</span>
+    </div>
+  </div>
+
   <section class="admin-section">
     <div class="container">
       <!-- Login Form -->
@@ -36,14 +44,13 @@
           </div>
           <button type="submit" class="btn btn-primary">Login</button>
         </form>
-        <p id="loginError" style="color:red; display:none;">Invalid password.</p>
+        <p id="loginError" style="color:#ef4444; display:none;">Invalid password.</p>
       </div>
 
-      <!-- Dashboard (hidden until login) -->
+      <!-- Dashboard -->
       <div id="dashboardDiv" style="display:none;">
         <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:1rem;">
           <h2>Admin Dashboard</h2>
-          <!-- Logout button -->
           <button id="logoutBtn" class="btn btn-danger" style="padding:0.6rem 1.8rem;">Logout</button>
         </div>
 
@@ -54,7 +61,6 @@
           <div class="stat-card"><h4>Rejected</h4><p id="rejectedStat">0</p></div>
         </div>
 
-        <!-- Search, filter, refresh, and logout (logout already above) -->
         <div style="display:flex; gap:10px; flex-wrap:wrap; margin:20px 0;">
           <input type="text" id="searchInput" placeholder="Search by name or ref..." class="form-control" style="flex:1; min-width:180px;" />
           <select id="filterStatus" class="form-control" style="width:150px;">
@@ -83,6 +89,12 @@
       </div>
     </div>
   </section>
+
+  <footer>
+    <div class="container">
+      <p>&copy; 2026 CertifyHub. All rights reserved.</p>
+    </div>
+  </footer>
 
   <!-- Modals -->
   <div id="viewModal" class="modal" style="display:none;">
@@ -121,7 +133,7 @@
   <script src="script.js"></script>
   <script>
     // ============================================================
-    // ADMIN LOGIC
+    // ADMIN LOGIC – with Logout & Toast
     // ============================================================
     let currentApp = null;
     let currentRef = null;
@@ -140,23 +152,28 @@
       }
     });
 
-    // ---- Logout ----
+    // ---- Logout with Toast ----
     document.getElementById('logoutBtn').addEventListener('click', function() {
-      // Hide dashboard, show login
-      document.getElementById('dashboardDiv').style.display = 'none';
-      document.getElementById('loginDiv').style.display = 'block';
-      // Clear password field
-      document.getElementById('passwordInput').value = '';
-      // Reset any state
-      currentApp = null;
-      currentRef = null;
-      // Optionally clear table and stats
-      document.getElementById('tableBody').innerHTML = '';
-      // Reset stats to 0
-      document.getElementById('totalStat').textContent = '0';
-      document.getElementById('pendingStat').textContent = '0';
-      document.getElementById('approvedStat').textContent = '0';
-      document.getElementById('rejectedStat').textContent = '0';
+      const toast = document.getElementById('logoutToast');
+      // Show toast
+      toast.classList.add('show');
+
+      // After 2 seconds, complete logout
+      setTimeout(() => {
+        // Hide toast
+        toast.classList.remove('show');
+        // Hide dashboard, show login
+        document.getElementById('dashboardDiv').style.display = 'none';
+        document.getElementById('loginDiv').style.display = 'block';
+        document.getElementById('passwordInput').value = '';
+        currentApp = null;
+        currentRef = null;
+        document.getElementById('tableBody').innerHTML = '';
+        document.getElementById('totalStat').textContent = '0';
+        document.getElementById('pendingStat').textContent = '0';
+        document.getElementById('approvedStat').textContent = '0';
+        document.getElementById('rejectedStat').textContent = '0';
+      }, 2000);
     });
 
     // ---- Load Dashboard ----
