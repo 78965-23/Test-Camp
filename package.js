@@ -1,0 +1,15 @@
+{
+  "name": "certifyhub",
+  "version": "1.0.0",
+  "description": "Certificate management system with dynamic forms and PDF generation",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "express": "^4.18.2",
+    "cors": "^2.8.5"
+  },
+  "author": "",
+  "license": "ISC"
+}
