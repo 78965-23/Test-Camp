@@ -6,6 +6,7 @@
   <title>Admin Panel</title>
   <link rel="stylesheet" href="style.css" />
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script src="certificateGenerator.js"></script> <!-- NEW: shared PDF generator -->
 </head>
 <body>
   <!-- Navigation -->
@@ -143,11 +144,13 @@
           </div>
         </div>
 
-        <div style="display:flex; gap:10px; flex-wrap:wrap;">
+        <div style="display:flex; gap:10px; flex-wrap:wrap; margin-bottom:1rem;">
           <button id="finalApproveBtn" class="btn btn-success">Approve</button>
           <button id="rejectBtn" class="btn btn-danger">Reject</button>
           <span id="alreadyApprovedMsg" style="display:none; color:#22c55e; font-weight:600; align-self:center;">✅ Already Approved</span>
+          <button id="downloadCertBtn" class="btn btn-primary" style="background:#3b82f6;">⬇ Download PDF</button>
         </div>
+
         <div id="reviewProgress" style="display:none; margin-top:10px;">
           <div style="background:#e2e8f0; border-radius:8px; height:16px; overflow:hidden;">
             <div id="reviewProgressBar" style="width:0%; height:100%; background:#0f172a;"></div>
@@ -161,7 +164,7 @@
   <script src="script.js"></script>
   <script>
     // ============================================================
-    // ADMIN LOGIC – CAPTCHA, preview, custom phrases
+    // ADMIN LOGIC – using shared certificateGenerator.js
     // ============================================================
     let currentApp = null;
     let currentRef = null;
@@ -418,6 +421,16 @@
       saveApps(apps);
       document.getElementById('reviewModal').style.display = 'none';
       loadDashboard();
+    });
+
+    // ---- Download PDF from Admin Review (uses shared generator) ----
+    document.getElementById('downloadCertBtn').addEventListener('click', function() {
+      if (!currentApp) {
+        alert('No application loaded.');
+        return;
+      }
+      // Use the shared generator from certificateGenerator.js
+      generateCertificatePDF(currentApp, 'certificate');
     });
 
     // ---- Close modal helpers ----
