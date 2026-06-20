@@ -34,17 +34,32 @@
 
   <section class="admin-section">
     <div class="container">
-      <!-- Login Form -->
+      <!-- Login Form with CAPTCHA -->
       <div id="loginDiv">
         <h2>Admin Login</h2>
-        <form id="loginForm">
-          <div class="form-group">
-            <label>Password</label>
-            <input type="password" id="passwordInput" class="form-control" placeholder="Enter password" required />
+
+        <!-- CAPTCHA -->
+        <div id="captchaContainer" style="margin-bottom:1.5rem;">
+          <label style="display:block; font-weight:600; margin-bottom:6px;">Please verify you are human:</label>
+          <div style="display:flex; gap:12px; align-items:center; flex-wrap:wrap;">
+            <span id="captchaQuestion" style="font-size:1.3rem; font-weight:500;">3 + 5 = ?</span>
+            <input type="text" id="captchaInput" class="form-control" style="width:120px;" placeholder="Answer" />
+            <button id="captchaVerifyBtn" class="btn btn-primary" style="padding:0.5rem 1.5rem;">Verify</button>
           </div>
-          <button type="submit" class="btn btn-primary">Login</button>
-        </form>
-        <p id="loginError" style="color:#ef4444; display:none;">Invalid password.</p>
+          <p id="captchaError" style="color:#ef4444; display:none; margin-top:6px;">Incorrect answer. Try again.</p>
+        </div>
+
+        <!-- Password (hidden until CAPTCHA passed) -->
+        <div id="passwordContainer" style="display:none;">
+          <form id="loginForm">
+            <div class="form-group">
+              <label>Password</label>
+              <input type="password" id="passwordInput" class="form-control" placeholder="Enter password" required />
+            </div>
+            <button type="submit" class="btn btn-primary">Login</button>
+          </form>
+          <p id="loginError" style="color:#ef4444; display:none;">Invalid password.</p>
+        </div>
       </div>
 
       <!-- Dashboard -->
@@ -112,13 +127,30 @@
       <div id="reviewContent">
         <p><strong>Name:</strong> <input type="text" id="editName" class="form-control" /></p>
         <p><strong>Title (Certificate Name):</strong> <input type="text" id="editTitle" class="form-control" /></p>
-        <div id="certPreview" style="border:1px solid #e2e8f0; padding:1rem; border-radius:8px; margin:1rem 0; background:#f8fafc;">
-          <h4>Certificate Preview</h4>
-          <p id="previewText"></p>
+
+        <!-- Certificate Preview -->
+        <div style="border:1px solid #ccc; padding:1.5rem; border-radius:8px; margin:1rem 0; background:#fff;">
+          <h4 style="margin-bottom:0.5rem;">Certificate Preview</h4>
+          <div id="certPreviewContainer" style="font-family: 'Times New Roman', serif; max-width:100%; padding:0.5rem; border:1px solid #000; background:#fff; color:#000;">
+            <div style="text-align:center; font-size:1.8rem; font-weight:bold; text-decoration:underline; margin-bottom:0.5rem;">CERTIFICATE OF ACHIEVEMENT</div>
+            <div style="text-align:center; font-size:1.2rem; margin-bottom:0.3rem;">This is to certify that</div>
+            <div style="text-align:center; font-size:1.6rem; font-weight:bold; text-decoration:underline; margin-bottom:0.3rem;" id="previewName">Full Name</div>
+            <div style="text-align:center; font-size:1.2rem; margin-bottom:0.3rem;">has successfully completed the</div>
+            <div style="text-align:center; font-size:1.4rem; font-weight:bold; text-decoration:underline; margin-bottom:0.3rem;" id="previewTitle">Certificate Type</div>
+            <div style="text-align:center; font-size:1rem; margin-top:0.8rem; border-top:1px solid #000; padding-top:0.5rem;">
+              <div><strong>Reference No:</strong> <span id="previewRef">REF-XXXX-XXXXX</span></div>
+              <div><strong>Date:</strong> <span id="previewDate">2026-06-20</span></div>
+            </div>
+            <div style="text-align:center; font-size:0.9rem; margin-top:0.5rem; color:#333;">
+              <span id="previewDetails">Full Name, Email, Phone, Address, etc.</span>
+            </div>
+          </div>
         </div>
+
         <div style="display:flex; gap:10px; flex-wrap:wrap;">
           <button id="finalApproveBtn" class="btn btn-success">Approve</button>
           <button id="rejectBtn" class="btn btn-danger">Reject</button>
+          <span id="alreadyApprovedMsg" style="display:none; color:#22c55e; font-weight:600; align-self:center;">✅ Already Approved</span>
         </div>
         <div id="reviewProgress" style="display:none; margin-top:10px;">
           <div style="background:#e2e8f0; border-radius:8px; height:16px; overflow:hidden;">
@@ -133,16 +165,39 @@
   <script src="script.js"></script>
   <script>
     // ============================================================
-    // ADMIN LOGIC – localStorage version
+    // ADMIN LOGIC – localStorage, CAPTCHA, certificate preview
     // ============================================================
     let currentApp = null;
     let currentRef = null;
+    let captchaPassed = false;
 
-    // Helper to get apps from localStorage
+    // ---- CAPTCHA ----
+    function generateCaptcha() {
+      const a = Math.floor(Math.random() * 10) + 1;
+      const b = Math.floor(Math.random() * 10) + 1;
+      document.getElementById('captchaQuestion').textContent = `${a} + ${b} = ?`;
+      window._captchaAnswer = a + b;
+    }
+    generateCaptcha();
+
+    document.getElementById('captchaVerifyBtn').addEventListener('click', function() {
+      const input = document.getElementById('captchaInput').value.trim();
+      if (parseInt(input) === window._captchaAnswer) {
+        captchaPassed = true;
+        document.getElementById('captchaContainer').style.display = 'none';
+        document.getElementById('passwordContainer').style.display = 'block';
+        document.getElementById('captchaError').style.display = 'none';
+      } else {
+        document.getElementById('captchaError').style.display = 'block';
+        generateCaptcha();
+        document.getElementById('captchaInput').value = '';
+      }
+    });
+
+    // ---- Helpers ----
     function getApps() {
       return JSON.parse(localStorage.getItem('applications') || '[]');
     }
-
     function saveApps(apps) {
       localStorage.setItem('applications', JSON.stringify(apps));
     }
@@ -150,6 +205,10 @@
     // ---- Login ----
     document.getElementById('loginForm').addEventListener('submit', function(e) {
       e.preventDefault();
+      if (!captchaPassed) {
+        alert('Please complete the CAPTCHA first.');
+        return;
+      }
       const pwd = document.getElementById('passwordInput').value;
       if (pwd === '08092003') {
         document.getElementById('loginDiv').style.display = 'none';
@@ -170,6 +229,13 @@
         document.getElementById('dashboardDiv').style.display = 'none';
         document.getElementById('loginDiv').style.display = 'block';
         document.getElementById('passwordInput').value = '';
+        // Reset CAPTCHA
+        captchaPassed = false;
+        document.getElementById('captchaContainer').style.display = 'block';
+        document.getElementById('passwordContainer').style.display = 'none';
+        generateCaptcha();
+        document.getElementById('captchaInput').value = '';
+        // Clear data
         currentApp = null;
         currentRef = null;
         document.getElementById('tableBody').innerHTML = '';
@@ -251,22 +317,47 @@
       currentRef = ref;
       document.getElementById('editName').value = app.fullName || '';
       document.getElementById('editTitle').value = app.type || '';
-      updatePreview();
+      updatePreview(app);
+      // If already approved, hide reject and approve, show message
+      if (app.status === 'approved') {
+        document.getElementById('finalApproveBtn').style.display = 'none';
+        document.getElementById('rejectBtn').style.display = 'none';
+        document.getElementById('alreadyApprovedMsg').style.display = 'inline';
+      } else {
+        document.getElementById('finalApproveBtn').style.display = 'inline-block';
+        document.getElementById('rejectBtn').style.display = 'inline-block';
+        document.getElementById('alreadyApprovedMsg').style.display = 'none';
+      }
       document.getElementById('reviewModal').style.display = 'block';
       document.getElementById('reviewProgress').style.display = 'none';
     };
 
-    document.getElementById('editName').addEventListener('input', updatePreview);
-    document.getElementById('editTitle').addEventListener('input', updatePreview);
-    function updatePreview() {
-      const name = document.getElementById('editName').value || 'Full Name';
-      const title = document.getElementById('editTitle').value || 'Certificate Type';
-      document.getElementById('previewText').innerHTML = `<strong>${name}</strong> — ${title}`;
+    function updatePreview(app) {
+      const name = document.getElementById('editName').value || app.fullName || 'Full Name';
+      const title = document.getElementById('editTitle').value || app.type || 'Certificate Type';
+      document.getElementById('previewName').textContent = name;
+      document.getElementById('previewTitle').textContent = title;
+      document.getElementById('previewRef').textContent = app.referenceNumber || 'REF-XXXX-XXXXX';
+      document.getElementById('previewDate').textContent = app.submissionDate || new Date().toISOString().split('T')[0];
+      // Show some details
+      const details = `${app.fullName || ''} | ${app.email || ''} | ${app.phone || ''} | ${app.address || ''}`;
+      document.getElementById('previewDetails').textContent = details || 'All applicant details will appear here.';
     }
+
+    document.getElementById('editName').addEventListener('input', function() {
+      updatePreview(currentApp);
+    });
+    document.getElementById('editTitle').addEventListener('input', function() {
+      updatePreview(currentApp);
+    });
 
     // ---- Approve ----
     document.getElementById('finalApproveBtn').addEventListener('click', function() {
       if (!currentApp) return;
+      if (currentApp.status === 'approved') {
+        alert('Already approved.');
+        return;
+      }
       const progressDiv = document.getElementById('reviewProgress');
       const progressBar = document.getElementById('reviewProgressBar');
       const progressText = document.getElementById('reviewProgressText');
@@ -281,7 +372,7 @@
         alert('Application not found');
         return;
       }
-      
+
       apps[index] = {
         ...apps[index],
         status: 'approved',
@@ -289,12 +380,12 @@
         fullName: document.getElementById('editName').value || currentApp.fullName,
         type: document.getElementById('editTitle').value || currentApp.type
       };
-      
+
       progressBar.style.width = '40%';
       progressText.textContent = 'Saving...';
-      
+
       saveApps(apps);
-      
+
       progressBar.style.width = '80%';
       progressText.textContent = 'Done!';
       setTimeout(() => {
@@ -304,23 +395,27 @@
       }, 1000);
     });
 
-    // ---- Reject ----
+    // ---- Reject (only if not approved) ----
     document.getElementById('rejectBtn').addEventListener('click', function() {
       if (!currentApp) return;
+      if (currentApp.status === 'approved') {
+        alert('Cannot reject an approved application.');
+        return;
+      }
       if (!confirm('Reject this application?')) return;
-      
+
       const apps = getApps();
       const index = apps.findIndex(a => a.referenceNumber === currentRef);
       if (index === -1) {
         alert('Application not found');
         return;
       }
-      
+
       apps[index] = {
         ...apps[index],
         status: 'rejected'
       };
-      
+
       saveApps(apps);
       document.getElementById('reviewModal').style.display = 'none';
       loadDashboard();
