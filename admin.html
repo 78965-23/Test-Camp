@@ -34,11 +34,9 @@
 
   <section class="admin-section">
     <div class="container">
-      <!-- Login Form with CAPTCHA -->
+      <!-- Login with CAPTCHA -->
       <div id="loginDiv">
         <h2>Admin Login</h2>
-
-        <!-- CAPTCHA -->
         <div id="captchaContainer" style="margin-bottom:1.5rem;">
           <label style="display:block; font-weight:600; margin-bottom:6px;">Please verify you are human:</label>
           <div style="display:flex; gap:12px; align-items:center; flex-wrap:wrap;">
@@ -48,8 +46,6 @@
           </div>
           <p id="captchaError" style="color:#ef4444; display:none; margin-top:6px;">Incorrect answer. Try again.</p>
         </div>
-
-        <!-- Password (hidden until CAPTCHA passed) -->
         <div id="passwordContainer" style="display:none;">
           <form id="loginForm">
             <div class="form-group">
@@ -135,7 +131,7 @@
             <div style="text-align:center; font-size:1.8rem; font-weight:bold; text-decoration:underline; margin-bottom:0.5rem;">CERTIFICATE OF ACHIEVEMENT</div>
             <div style="text-align:center; font-size:1.2rem; margin-bottom:0.3rem;">This is to certify that</div>
             <div style="text-align:center; font-size:1.6rem; font-weight:bold; text-decoration:underline; margin-bottom:0.3rem;" id="previewName">Full Name</div>
-            <div style="text-align:center; font-size:1.2rem; margin-bottom:0.3rem;">has successfully completed the</div>
+            <div style="text-align:center; font-size:1.2rem; margin-bottom:0.3rem;" id="previewPhrase">has successfully completed the program.</div>
             <div style="text-align:center; font-size:1.4rem; font-weight:bold; text-decoration:underline; margin-bottom:0.3rem;" id="previewTitle">Certificate Type</div>
             <div style="text-align:center; font-size:1rem; margin-top:0.8rem; border-top:1px solid #000; padding-top:0.5rem;">
               <div><strong>Reference No:</strong> <span id="previewRef">REF-XXXX-XXXXX</span></div>
@@ -165,7 +161,7 @@
   <script src="script.js"></script>
   <script>
     // ============================================================
-    // ADMIN LOGIC – localStorage, CAPTCHA, certificate preview
+    // ADMIN LOGIC – CAPTCHA, preview, custom phrases
     // ============================================================
     let currentApp = null;
     let currentRef = null;
@@ -220,7 +216,7 @@
       }
     });
 
-    // ---- Logout with Toast ----
+    // ---- Logout ----
     document.getElementById('logoutBtn').addEventListener('click', function() {
       const toast = document.getElementById('logoutToast');
       toast.classList.add('show');
@@ -229,13 +225,11 @@
         document.getElementById('dashboardDiv').style.display = 'none';
         document.getElementById('loginDiv').style.display = 'block';
         document.getElementById('passwordInput').value = '';
-        // Reset CAPTCHA
         captchaPassed = false;
         document.getElementById('captchaContainer').style.display = 'block';
         document.getElementById('passwordContainer').style.display = 'none';
         generateCaptcha();
         document.getElementById('captchaInput').value = '';
-        // Clear data
         currentApp = null;
         currentRef = null;
         document.getElementById('tableBody').innerHTML = '';
@@ -309,6 +303,18 @@
     };
 
     // ---- Review Modal ----
+    const certPhrases = {
+      academic: 'has successfully completed the Academic Excellence program.',
+      professional: 'has successfully completed the Professional Achievement program.',
+      community: 'has successfully completed the Community Service program.',
+      training: 'has successfully completed the Training Program.',
+      billionaire: 'is recognized as a Billionaire.',
+      millionaire: 'is recognized as a Millionaire.',
+      trillionaire: 'is recognized as a Trillionaire.',
+      mathexpert: 'is a certified Math Expert.',
+      coaching: 'has successfully registered for the Coaching Program.'
+    };
+
     window.reviewApp = function(ref) {
       const apps = getApps();
       const app = apps.find(a => a.referenceNumber === ref);
@@ -318,7 +324,6 @@
       document.getElementById('editName').value = app.fullName || '';
       document.getElementById('editTitle').value = app.type || '';
       updatePreview(app);
-      // If already approved, hide reject and approve, show message
       if (app.status === 'approved') {
         document.getElementById('finalApproveBtn').style.display = 'none';
         document.getElementById('rejectBtn').style.display = 'none';
@@ -335,20 +340,21 @@
     function updatePreview(app) {
       const name = document.getElementById('editName').value || app.fullName || 'Full Name';
       const title = document.getElementById('editTitle').value || app.type || 'Certificate Type';
+      const phrase = certPhrases[app.type] || 'has successfully completed the certificate program.';
       document.getElementById('previewName').textContent = name;
+      document.getElementById('previewPhrase').textContent = phrase;
       document.getElementById('previewTitle').textContent = title;
       document.getElementById('previewRef').textContent = app.referenceNumber || 'REF-XXXX-XXXXX';
       document.getElementById('previewDate').textContent = app.submissionDate || new Date().toISOString().split('T')[0];
-      // Show some details
       const details = `${app.fullName || ''} | ${app.email || ''} | ${app.phone || ''} | ${app.address || ''}`;
       document.getElementById('previewDetails').textContent = details || 'All applicant details will appear here.';
     }
 
     document.getElementById('editName').addEventListener('input', function() {
-      updatePreview(currentApp);
+      if (currentApp) updatePreview(currentApp);
     });
     document.getElementById('editTitle').addEventListener('input', function() {
-      updatePreview(currentApp);
+      if (currentApp) updatePreview(currentApp);
     });
 
     // ---- Approve ----
@@ -383,7 +389,6 @@
 
       progressBar.style.width = '40%';
       progressText.textContent = 'Saving...';
-
       saveApps(apps);
 
       progressBar.style.width = '80%';
@@ -395,7 +400,7 @@
       }, 1000);
     });
 
-    // ---- Reject (only if not approved) ----
+    // ---- Reject ----
     document.getElementById('rejectBtn').addEventListener('click', function() {
       if (!currentApp) return;
       if (currentApp.status === 'approved') {
@@ -403,19 +408,13 @@
         return;
       }
       if (!confirm('Reject this application?')) return;
-
       const apps = getApps();
       const index = apps.findIndex(a => a.referenceNumber === currentRef);
       if (index === -1) {
         alert('Application not found');
         return;
       }
-
-      apps[index] = {
-        ...apps[index],
-        status: 'rejected'
-      };
-
+      apps[index] = { ...apps[index], status: 'rejected' };
       saveApps(apps);
       document.getElementById('reviewModal').style.display = 'none';
       loadDashboard();
@@ -425,7 +424,6 @@
     window.closeModal = function(id) {
       document.getElementById(id).style.display = 'none';
     };
-
     window.onclick = function(event) {
       if (event.target.classList.contains('modal')) {
         event.target.style.display = 'none';
