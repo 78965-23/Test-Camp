@@ -67,7 +67,6 @@
       progressBar.style.width = '0%';
       progressText.textContent = 'Searching...';
 
-      // Get from localStorage
       const apps = JSON.parse(localStorage.getItem('applications') || '[]');
       const app = apps.find(a => a.referenceNumber === input || a.certificateNumber === input);
 
@@ -95,13 +94,37 @@
         const pageWidth = doc.internal.pageSize.getWidth();
         const pageHeight = doc.internal.pageSize.getHeight();
 
-        // Border
         doc.setDrawColor(0);
         doc.setLineWidth(1);
         doc.rect(margin, margin, pageWidth - 2*margin, pageHeight - 2*margin);
 
         let y = margin + 20;
         const center = pageWidth / 2;
+
+        // Type names and phrases
+        const typeNames = {
+          academic: 'Academic Excellence',
+          professional: 'Professional Achievement',
+          community: 'Community Service',
+          training: 'Training Program',
+          billionaire: 'Billionaire Cert',
+          millionaire: 'Millionaire Cert',
+          trillionaire: 'Trillionaire Cert',
+          mathexpert: 'Math Expert Cert',
+          coaching: 'Coaching Registration'
+        };
+
+        const certPhrases = {
+          academic: 'has successfully completed the Academic Excellence program.',
+          professional: 'has successfully completed the Professional Achievement program.',
+          community: 'has successfully completed the Community Service program.',
+          training: 'has successfully completed the Training Program.',
+          billionaire: 'is recognized as a Billionaire.',
+          millionaire: 'is recognized as a Millionaire.',
+          trillionaire: 'is recognized as a Trillionaire.',
+          mathexpert: 'is a certified Math Expert.',
+          coaching: 'has successfully registered for the Coaching Program.'
+        };
 
         // Title
         doc.setFontSize(18);
@@ -114,31 +137,23 @@
         doc.text('This is to certify that', center, y, { align: 'center' });
         y += 10;
 
-        // Name (underlined)
+        // Name
+        const name = app.fullName || 'N/A';
         doc.setFontSize(16);
         doc.setFont('times', 'bold');
-        const name = app.fullName || 'N/A';
         doc.text(name, center, y, { align: 'center' });
-        // Underline
         const nameWidth = doc.getStringUnitWidth(name) * 16 / doc.internal.scaleFactor;
         doc.line(center - nameWidth/2, y+1, center + nameWidth/2, y+1);
         y += 12;
 
+        // Custom phrase
+        const phrase = certPhrases[app.type] || 'has successfully completed the certificate program.';
         doc.setFontSize(12);
         doc.setFont('times', 'normal');
-        doc.text('has successfully completed the', center, y, { align: 'center' });
-        y += 10;
+        doc.text(phrase, center, y, { align: 'center' });
+        y += 12;
 
-        doc.setFontSize(14);
-        doc.setFont('times', 'bold');
-        const title = app.type || 'Certificate';
-        doc.text(title, center, y, { align: 'center' });
-        // Underline
-        const titleWidth = doc.getStringUnitWidth(title) * 14 / doc.internal.scaleFactor;
-        doc.line(center - titleWidth/2, y+1, center + titleWidth/2, y+1);
-        y += 14;
-
-        // Details section
+        // Details
         doc.setFontSize(10);
         doc.setFont('times', 'normal');
         const details = [
@@ -149,14 +164,12 @@
           `Phone: ${app.phone || 'N/A'}`,
           `Address: ${app.address || app.residentialAddress || 'N/A'}`
         ];
-        // Add more fields if present
         const extraFields = ['institution', 'company', 'organization', 'program', 'major', 'position', 'project'];
         extraFields.forEach(f => {
           if (app[f]) details.push(`${f.charAt(0).toUpperCase()+f.slice(1)}: ${app[f]}`);
         });
 
-        let detailY = y;
-        doc.setFontSize(10);
+        let detailY = y + 6;
         details.forEach(line => {
           doc.text(line, margin + 10, detailY);
           detailY += 7;
