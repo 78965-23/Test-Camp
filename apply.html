@@ -8,7 +8,7 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 </head>
 <body>
-  <!-- Navigation -->
+  <!-- Navigation (same) -->
   <nav class="navbar">
     <div class="nav-container">
       <a href="index.html" class="nav-logo">CertifyHub</a>
@@ -64,7 +64,7 @@
           </div>
         </div>
 
-        <!-- Progress / Spinner -->
+        <!-- Spinner -->
         <div id="progressContainer" style="display:none; margin-top:20px;">
           <div style="display:flex; align-items:center; gap:16px; justify-content:center;">
             <div class="spinner"></div>
@@ -75,7 +75,6 @@
           </div>
         </div>
 
-        <!-- Success / Error -->
         <div id="successMessage" style="display:none; margin-top:20px; padding:1rem; background:#dcfce7; border:1px solid #22c55e; border-radius:8px; color:#166534;"></div>
         <div id="errorMessage" style="display:none; margin-top:20px; padding:1rem; background:#fee2e2; border:1px solid #ef4444; border-radius:8px; color:#991b1b;"></div>
       </form>
@@ -88,63 +87,39 @@
     </div>
   </footer>
 
-  <script src="script.js"></script>
   <style>
-    .step-badge {
-      padding: 6px 18px;
-      border-radius: 30px;
-      font-size: 0.9rem;
-      font-weight: 600;
-      background: #e2e8f0;
-      color: #64748b;
-    }
-    .active-step {
-      background: #0f172a;
-      color: #fff;
-    }
-    .form-step {
-      animation: fadeIn 0.3s ease;
-    }
-    @keyframes fadeIn {
-      from { opacity: 0; transform: translateY(10px); }
-      to { opacity: 1; transform: translateY(0); }
-    }
-    .spinner {
-      width: 30px;
-      height: 30px;
-      border: 4px solid #e2e8f0;
-      border-top-color: #0f172a;
-      border-radius: 50%;
-      animation: spin 0.8s linear infinite;
-    }
-    @keyframes spin {
-      to { transform: rotate(360deg); }
-    }
-    .btn-success {
-      background: #22c55e;
-      color: #fff;
-    }
-    .btn-success:hover {
-      background: #16a34a;
-    }
+    .step-badge { padding: 6px 18px; border-radius: 30px; font-size: 0.9rem; font-weight: 600; background: #e2e8f0; color: #64748b; }
+    .active-step { background: #0f172a; color: #fff; }
+    .form-step { animation: fadeIn 0.3s ease; }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+    .spinner { width: 30px; height: 30px; border: 4px solid #e2e8f0; border-top-color: #0f172a; border-radius: 50%; animation: spin 0.8s linear infinite; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .btn-success { background: #22c55e; color: #fff; }
+    .btn-success:hover { background: #16a34a; }
   </style>
 
+  <script src="script.js"></script>
   <script>
     document.addEventListener('DOMContentLoaded', function() {
       const params = new URLSearchParams(window.location.search);
       const type = params.get('type') || 'academic';
       const typeDisplay = document.getElementById('certTypeDisplay');
+
       const typeNames = {
         academic: 'Academic Excellence',
         professional: 'Professional Achievement',
         community: 'Community Service',
-        training: 'Training Program'
+        training: 'Training Program',
+        billionaire: 'Billionaire Cert',
+        millionaire: 'Millionaire Cert',
+        trillionaire: 'Trillionaire Cert',
+        mathexpert: 'Math Expert Cert',
+        coaching: 'Coaching Registration'
       };
       typeDisplay.textContent = `Certificate Type: ${typeNames[type] || type}`;
 
-      // ---------- Extended field sets with steps ----------
+      // Base fields (step 1)
       const baseFields = [
-        // Step 1 fields (personal & address)
         { name: 'fullName', label: 'Full Name', required: true, type: 'text', placeholder: 'e.g. John Doe', step: 1 },
         { name: 'email', label: 'Email Address', required: true, type: 'email', placeholder: 'john@example.com', step: 1 },
         { name: 'phone', label: 'Phone Number', required: true, type: 'tel', placeholder: '+1 234 567 890', step: 1 },
@@ -157,8 +132,7 @@
         { name: 'city', label: 'City', required: true, type: 'text', placeholder: 'New York', step: 1 },
         { name: 'state', label: 'State / Province', required: true, type: 'text', placeholder: 'NY', step: 1 },
         { name: 'postalCode', label: 'Postal / Zip Code', required: true, type: 'text', placeholder: '10001', step: 1 },
-
-        // Step 2 fields (rare / important)
+        // Step 2 (additional)
         { name: 'emergencyName', label: 'Emergency Contact Name', required: true, type: 'text', placeholder: 'e.g. Jane Doe', step: 2 },
         { name: 'emergencyPhone', label: 'Emergency Contact Phone', required: true, type: 'tel', placeholder: '+1 987 654 321', step: 2 },
         { name: 'emergencyRelation', label: 'Relationship', required: true, type: 'text', placeholder: 'Spouse', step: 2 },
@@ -168,7 +142,7 @@
         { name: 'additionalDocs', label: 'Additional Documents (brief description)', required: false, type: 'text', placeholder: 'Transcript, ID copy', step: 2 }
       ];
 
-      // Type-specific fields (keep existing)
+      // Type-specific fields (some types have extra fields, others none)
       const typeSpecific = {
         academic: [
           { name: 'institution', label: 'Institution / University', required: true, type: 'text', placeholder: 'Harvard University', step: 2 },
@@ -198,19 +172,19 @@
           { name: 'completionDate', label: 'Completion Date', required: true, type: 'date', step: 2 },
           { name: 'duration', label: 'Duration (weeks)', required: true, type: 'number', placeholder: '12', step: 2 },
           { name: 'certification', label: 'Certification Earned (if any)', required: false, type: 'text', placeholder: 'Python for Data Science', step: 2 }
-        ]
+        ],
+        // New types have no extra fields
+        billionaire: [],
+        millionaire: [],
+        trillionaire: [],
+        mathexpert: [],
+        coaching: []
       };
 
-      // Combine base + type-specific
-      let allFields = [...baseFields];
-      const specific = typeSpecific[type] || typeSpecific.academic;
-      allFields = allFields.concat(specific);
-
-      // Separate by step
+      const allFields = [...baseFields, ...(typeSpecific[type] || [])];
       const step1Fields = allFields.filter(f => f.step === 1);
       const step2Fields = allFields.filter(f => f.step === 2);
 
-      // Render fields into steps
       function renderFields(containerId, fields) {
         const container = document.getElementById(containerId);
         container.innerHTML = '';
@@ -251,7 +225,7 @@
       renderFields('step1Fields', step1Fields);
       renderFields('step2Fields', step2Fields);
 
-      // ---------- Step navigation ----------
+      // ---- Step navigation (same as before) ----
       let currentStep = 1;
       const totalSteps = 3;
       const step1Div = document.getElementById('step1');
@@ -267,35 +241,23 @@
         step1Div.style.display = step === 1 ? 'block' : 'none';
         step2Div.style.display = step === 2 ? 'block' : 'none';
         step3Div.style.display = step === 3 ? 'block' : 'none';
-        // Update indicators
         for (let i = 1; i <= 3; i++) {
           indicators[i].classList.toggle('active-step', i === step);
         }
         currentStep = step;
-        // Scroll to top of form
         document.querySelector('.form-section').scrollIntoView({ behavior: 'smooth', block: 'start' });
       }
 
-      // Next buttons
       document.querySelectorAll('.next-step').forEach(btn => {
         btn.addEventListener('click', function() {
-          // Validate current step fields
           const currentDiv = currentStep === 1 ? step1Div : step2Div;
           const inputs = currentDiv.querySelectorAll('input[required], select[required]');
           let valid = true;
           inputs.forEach(inp => {
-            if (!inp.value.trim()) {
-              valid = false;
-              inp.style.borderColor = '#ef4444';
-            } else {
-              inp.style.borderColor = '';
-            }
+            if (!inp.value.trim()) { valid = false; inp.style.borderColor = '#ef4444'; }
+            else inp.style.borderColor = '';
           });
-          if (!valid) {
-            alert('Please fill in all required fields in this section.');
-            return;
-          }
-          // If step 2, also validate email if present
+          if (!valid) { alert('Please fill in all required fields in this section.'); return; }
           const emailInput = document.getElementById('email');
           if (emailInput && emailInput.value) {
             const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -307,7 +269,6 @@
           }
           if (currentStep < totalSteps) {
             if (currentStep === 2) {
-              // Move to step 3 (review)
               showStep(3);
               generateReview();
             } else {
@@ -317,14 +278,12 @@
         });
       });
 
-      // Previous buttons
       document.querySelectorAll('.prev-step').forEach(btn => {
         btn.addEventListener('click', function() {
           if (currentStep > 1) showStep(currentStep - 1);
         });
       });
 
-      // ---------- Review generation ----------
       function generateReview() {
         const container = document.getElementById('reviewContainer');
         let html = '<dl style="display:grid; grid-template-columns:1fr 2fr; gap:8px;">';
@@ -339,16 +298,25 @@
         container.innerHTML = html;
       }
 
-      // ---------- Submit ----------
+      // ---- Submit ----
+      const certPhrases = {
+        academic: 'has successfully completed the Academic Excellence program.',
+        professional: 'has successfully completed the Professional Achievement program.',
+        community: 'has successfully completed the Community Service program.',
+        training: 'has successfully completed the Training Program.',
+        billionaire: 'is recognized as a Billionaire.',
+        millionaire: 'is recognized as a Millionaire.',
+        trillionaire: 'is recognized as a Trillionaire.',
+        mathexpert: 'is a certified Math Expert.',
+        coaching: 'has successfully registered for the Coaching Program.'
+      };
+
       document.getElementById('applyForm').addEventListener('submit', async function(e) {
         e.preventDefault();
-
-        // Disable submit button to prevent double submission
         const submitBtn = document.getElementById('submitBtn');
         submitBtn.disabled = true;
         submitBtn.textContent = 'Submitting...';
 
-        // Show spinner
         const progressContainer = document.getElementById('progressContainer');
         const progressBar = document.getElementById('progressBar');
         const progressText = document.getElementById('progressText');
@@ -356,13 +324,11 @@
         progressBar.style.width = '0%';
         progressText.textContent = 'Processing your application...';
 
-        // Gather data
         const data = { type };
         allFields.forEach(f => {
           const el = document.getElementById(f.name);
           if (el) data[f.name] = el.value.trim();
         });
-
         const ref = generateRef();
         data.referenceNumber = ref;
         data.status = 'pending';
@@ -370,7 +336,6 @@
         data.certificateNumber = '';
 
         try {
-          // Save to localStorage
           progressBar.style.width = '30%';
           progressText.textContent = 'Saving application...';
           let apps = JSON.parse(localStorage.getItem('applications') || '[]');
@@ -380,21 +345,18 @@
           progressBar.style.width = '60%';
           progressText.textContent = 'Generating receipt PDF...';
 
-          // Generate receipt PDF with margins
           const { jsPDF } = window.jspdf;
           const doc = new jsPDF();
           const margin = 20;
           const pageWidth = doc.internal.pageSize.getWidth();
           const pageHeight = doc.internal.pageSize.getHeight();
 
-          // Header
           doc.setFontSize(18);
-          doc.setTextColor(0, 0, 0);
+          doc.setTextColor(0);
           doc.text('ACKNOWLEDGEMENT RECEIPT', pageWidth/2, margin+10, { align: 'center' });
           doc.setLineWidth(0.5);
           doc.line(margin, margin+15, pageWidth-margin, margin+15);
 
-          // Content
           let y = margin + 25;
           doc.setFontSize(12);
           doc.text(`Reference Number: ${data.referenceNumber}`, margin, y);
@@ -407,6 +369,7 @@
           y += 6;
           doc.text(`Certificate Type: ${typeNames[type] || type}`, margin, y);
           y += 10;
+          const phrase = certPhrases[type] || 'has successfully completed the certificate program.';
           doc.text(`This is to acknowledge that your application for the ${typeNames[type] || type} certificate`, margin, y);
           y += 7;
           doc.text(`has been successfully submitted and is currently under review.`, margin, y);
@@ -415,7 +378,6 @@
           y += 8;
           doc.text(`Thank you for using CertifyHub.`, margin, y);
 
-          // Footer
           const footerY = pageHeight - margin - 10;
           doc.setFontSize(10);
           doc.text('This is a system-generated receipt. No signature required.', pageWidth/2, footerY, { align: 'center' });
@@ -435,19 +397,15 @@
 
           progressBar.style.width = '100%';
           progressText.textContent = 'Done!';
-
-          // Show success
           const successDiv = document.getElementById('successMessage');
           successDiv.textContent = `✅ Application submitted successfully! Reference: ${data.referenceNumber}. Receipt downloaded.`;
           successDiv.style.display = 'block';
 
-          // Reset form
           setTimeout(() => {
             progressContainer.style.display = 'none';
             submitBtn.disabled = false;
             submitBtn.textContent = 'Submit Application';
             this.reset();
-            // Reset to step 1
             showStep(1);
           }, 2000);
 
@@ -462,7 +420,6 @@
         }
       });
 
-      // ---------- Helpers ----------
       function generateRef() {
         const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
         let ref = 'REF-';
@@ -472,7 +429,6 @@
         return ref;
       }
 
-      // Initial step
       showStep(1);
     });
   </script>
