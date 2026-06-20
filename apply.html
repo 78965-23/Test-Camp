@@ -28,22 +28,57 @@
     <div class="container">
       <h2>Apply for Certificate</h2>
       <p id="certTypeDisplay" style="font-weight:500; color:#475569;"></p>
-      <form id="applyForm">
-        <div id="dynamicFields"></div>
-        <button type="submit" class="btn btn-primary">Submit Application</button>
-      </form>
-      <div id="progressContainer" style="display:none; margin-top:20px;">
-        <div style="background:#e2e8f0; border-radius:8px; height:20px; overflow:hidden;">
-          <div id="progressBar" style="width:0%; height:100%; background:#0f172a; transition:width 0.3s;"></div>
+
+      <!-- Progress Indicator -->
+      <div style="display:flex; gap:12px; margin-bottom:30px; justify-content:center;">
+        <span id="stepIndicator1" class="step-badge active-step">1. Personal</span>
+        <span id="stepIndicator2" class="step-badge">2. Additional</span>
+        <span id="stepIndicator3" class="step-badge">3. Review</span>
+      </div>
+
+      <form id="applyForm" novalidate>
+        <!-- Step 1 -->
+        <div id="step1" class="form-step">
+          <h3 style="margin-bottom:20px;">Personal &amp; Address Details</h3>
+          <div id="step1Fields"></div>
+          <button type="button" class="btn btn-primary next-step">Next →</button>
         </div>
-        <p id="progressText" style="margin-top:5px; color:#475569;">Generating PDF...</p>
-      </div>
-      <!-- Success message -->
-      <div id="successMessage" style="display:none; margin-top:20px; padding:1rem; background:#dcfce7; border:1px solid #22c55e; border-radius:8px; color:#166534;">
-        ✅ Application submitted successfully! Receipt downloaded.
-      </div>
-      <!-- Error display area -->
-      <div id="errorMessage" style="display:none; margin-top:20px; padding:1rem; background:#fee2e2; border:1px solid #ef4444; border-radius:8px; color:#991b1b;"></div>
+
+        <!-- Step 2 -->
+        <div id="step2" class="form-step" style="display:none;">
+          <h3 style="margin-bottom:20px;">Additional Important Details</h3>
+          <div id="step2Fields"></div>
+          <div style="display:flex; gap:12px; justify-content:space-between;">
+            <button type="button" class="btn btn-secondary prev-step">← Back</button>
+            <button type="button" class="btn btn-primary next-step">Next →</button>
+          </div>
+        </div>
+
+        <!-- Step 3 -->
+        <div id="step3" class="form-step" style="display:none;">
+          <h3 style="margin-bottom:20px;">Review Your Application</h3>
+          <div id="reviewContainer" style="background:#f8fafc; padding:1.5rem; border-radius:12px; border:1px solid #e2e8f0; margin-bottom:20px; max-height:400px; overflow-y:auto;"></div>
+          <div style="display:flex; gap:12px; justify-content:space-between;">
+            <button type="button" class="btn btn-secondary prev-step">← Back</button>
+            <button type="submit" class="btn btn-success" id="submitBtn">Submit Application</button>
+          </div>
+        </div>
+
+        <!-- Progress / Spinner -->
+        <div id="progressContainer" style="display:none; margin-top:20px;">
+          <div style="display:flex; align-items:center; gap:16px; justify-content:center;">
+            <div class="spinner"></div>
+            <p id="progressText" style="color:#475569; font-weight:500;">Submitting your application...</p>
+          </div>
+          <div style="background:#e2e8f0; border-radius:8px; height:6px; margin-top:12px; overflow:hidden;">
+            <div id="progressBar" style="width:0%; height:100%; background:#0f172a; transition:width 0.5s;"></div>
+          </div>
+        </div>
+
+        <!-- Success / Error -->
+        <div id="successMessage" style="display:none; margin-top:20px; padding:1rem; background:#dcfce7; border:1px solid #22c55e; border-radius:8px; color:#166534;"></div>
+        <div id="errorMessage" style="display:none; margin-top:20px; padding:1rem; background:#fee2e2; border:1px solid #ef4444; border-radius:8px; color:#991b1b;"></div>
+      </form>
     </div>
   </section>
 
@@ -54,16 +89,51 @@
   </footer>
 
   <script src="script.js"></script>
+  <style>
+    .step-badge {
+      padding: 6px 18px;
+      border-radius: 30px;
+      font-size: 0.9rem;
+      font-weight: 600;
+      background: #e2e8f0;
+      color: #64748b;
+    }
+    .active-step {
+      background: #0f172a;
+      color: #fff;
+    }
+    .form-step {
+      animation: fadeIn 0.3s ease;
+    }
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    .spinner {
+      width: 30px;
+      height: 30px;
+      border: 4px solid #e2e8f0;
+      border-top-color: #0f172a;
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+    }
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+    .btn-success {
+      background: #22c55e;
+      color: #fff;
+    }
+    .btn-success:hover {
+      background: #16a34a;
+    }
+  </style>
+
   <script>
-    // ============================================================
-    // DYNAMIC FORM – 10 fields per certificate type
-    // ============================================================
     document.addEventListener('DOMContentLoaded', function() {
       const params = new URLSearchParams(window.location.search);
       const type = params.get('type') || 'academic';
-      const fieldsContainer = document.getElementById('dynamicFields');
       const typeDisplay = document.getElementById('certTypeDisplay');
-
       const typeNames = {
         academic: 'Academic Excellence',
         professional: 'Professional Achievement',
@@ -72,80 +142,327 @@
       };
       typeDisplay.textContent = `Certificate Type: ${typeNames[type] || type}`;
 
-      // ---------- Extended field sets ----------
-      const fieldSets = {
+      // ---------- Extended field sets with steps ----------
+      const baseFields = [
+        // Step 1 fields (personal & address)
+        { name: 'fullName', label: 'Full Name', required: true, type: 'text', placeholder: 'e.g. John Doe', step: 1 },
+        { name: 'email', label: 'Email Address', required: true, type: 'email', placeholder: 'john@example.com', step: 1 },
+        { name: 'phone', label: 'Phone Number', required: true, type: 'tel', placeholder: '+1 234 567 890', step: 1 },
+        { name: 'dob', label: 'Date of Birth', required: true, type: 'date', step: 1 },
+        { name: 'gender', label: 'Gender', required: true, type: 'select', options: ['Male', 'Female', 'Other'], step: 1 },
+        { name: 'nationality', label: 'Nationality', required: true, type: 'text', placeholder: 'e.g. American', step: 1 },
+        { name: 'residentialAddress', label: 'Residential Address', required: true, type: 'text', placeholder: '123 Main St, City', step: 1 },
+        { name: 'permanentAddress', label: 'Permanent Address', required: false, type: 'text', placeholder: 'Same as residential or enter', step: 1 },
+        { name: 'otherAddress', label: 'Other Address (optional)', required: false, type: 'text', placeholder: 'Any other address', step: 1 },
+        { name: 'city', label: 'City', required: true, type: 'text', placeholder: 'New York', step: 1 },
+        { name: 'state', label: 'State / Province', required: true, type: 'text', placeholder: 'NY', step: 1 },
+        { name: 'postalCode', label: 'Postal / Zip Code', required: true, type: 'text', placeholder: '10001', step: 1 },
+
+        // Step 2 fields (rare / important)
+        { name: 'emergencyName', label: 'Emergency Contact Name', required: true, type: 'text', placeholder: 'e.g. Jane Doe', step: 2 },
+        { name: 'emergencyPhone', label: 'Emergency Contact Phone', required: true, type: 'tel', placeholder: '+1 987 654 321', step: 2 },
+        { name: 'emergencyRelation', label: 'Relationship', required: true, type: 'text', placeholder: 'Spouse', step: 2 },
+        { name: 'medicalConditions', label: 'Medical Conditions (if any)', required: false, type: 'text', placeholder: 'None', step: 2 },
+        { name: 'specialRequests', label: 'Special Requests / Accommodations', required: false, type: 'text', placeholder: 'Wheelchair access', step: 2 },
+        { name: 'previousCertificate', label: 'Previous Certificate (if any)', required: false, type: 'text', placeholder: 'e.g. Certificate of Completion 2020', step: 2 },
+        { name: 'additionalDocs', label: 'Additional Documents (brief description)', required: false, type: 'text', placeholder: 'Transcript, ID copy', step: 2 }
+      ];
+
+      // Type-specific fields (keep existing)
+      const typeSpecific = {
         academic: [
-          { name: 'fullName', label: 'Full Name', required: true, type: 'text', placeholder: 'e.g. John Doe' },
-          { name: 'email', label: 'Email Address', required: true, type: 'email', placeholder: 'john@example.com' },
-          { name: 'phone', label: 'Phone Number', required: true, type: 'tel', placeholder: '+1 234 567 890' },
-          { name: 'dob', label: 'Date of Birth', required: true, type: 'date' },
-          { name: 'institution', label: 'Institution / University', required: true, type: 'text', placeholder: 'Harvard University' },
-          { name: 'gpa', label: 'GPA (out of 4.0)', required: false, type: 'text', placeholder: '3.8' },
-          { name: 'major', label: 'Major / Field of Study', required: true, type: 'text', placeholder: 'Computer Science' },
-          { name: 'graduationYear', label: 'Year of Graduation', required: true, type: 'number', placeholder: '2025' },
-          { name: 'address', label: 'Mailing Address', required: true, type: 'text', placeholder: '123 Main St, City, Country' },
-          { name: 'additional', label: 'Additional Notes (optional)', required: false, type: 'text', placeholder: 'Any other info' }
+          { name: 'institution', label: 'Institution / University', required: true, type: 'text', placeholder: 'Harvard University', step: 2 },
+          { name: 'gpa', label: 'GPA (out of 4.0)', required: false, type: 'text', placeholder: '3.8', step: 2 },
+          { name: 'major', label: 'Major / Field of Study', required: true, type: 'text', placeholder: 'Computer Science', step: 2 },
+          { name: 'graduationYear', label: 'Year of Graduation', required: true, type: 'number', placeholder: '2025', step: 2 },
+          { name: 'additional', label: 'Additional Notes (optional)', required: false, type: 'text', placeholder: 'Any other info', step: 2 }
         ],
         professional: [
-          { name: 'fullName', label: 'Full Name', required: true, type: 'text', placeholder: 'e.g. Jane Smith' },
-          { name: 'email', label: 'Email Address', required: true, type: 'email', placeholder: 'jane@company.com' },
-          { name: 'phone', label: 'Phone Number', required: true, type: 'tel', placeholder: '+1 987 654 321' },
-          { name: 'dob', label: 'Date of Birth', required: true, type: 'date' },
-          { name: 'company', label: 'Company / Organization', required: true, type: 'text', placeholder: 'Google Inc.' },
-          { name: 'position', label: 'Job Title / Position', required: true, type: 'text', placeholder: 'Senior Developer' },
-          { name: 'yearsOfExperience', label: 'Years of Experience', required: true, type: 'number', placeholder: '5' },
-          { name: 'industry', label: 'Industry / Sector', required: true, type: 'text', placeholder: 'Technology' },
-          { name: 'achievements', label: 'Key Achievements (brief)', required: true, type: 'text', placeholder: 'Led team to deliver X project' },
-          { name: 'address', label: 'Work Address', required: true, type: 'text', placeholder: '1600 Amphitheatre Pkwy, CA' }
+          { name: 'company', label: 'Company / Organization', required: true, type: 'text', placeholder: 'Google Inc.', step: 2 },
+          { name: 'position', label: 'Job Title / Position', required: true, type: 'text', placeholder: 'Senior Developer', step: 2 },
+          { name: 'yearsOfExperience', label: 'Years of Experience', required: true, type: 'number', placeholder: '5', step: 2 },
+          { name: 'industry', label: 'Industry / Sector', required: true, type: 'text', placeholder: 'Technology', step: 2 },
+          { name: 'achievements', label: 'Key Achievements (brief)', required: true, type: 'text', placeholder: 'Led team to deliver X project', step: 2 }
         ],
         community: [
-          { name: 'fullName', label: 'Full Name', required: true, type: 'text', placeholder: 'e.g. Maria Garcia' },
-          { name: 'email', label: 'Email Address', required: true, type: 'email', placeholder: 'maria@community.org' },
-          { name: 'phone', label: 'Phone Number', required: true, type: 'tel', placeholder: '+1 555 123 456' },
-          { name: 'dob', label: 'Date of Birth', required: true, type: 'date' },
-          { name: 'organization', label: 'Organization / NGO', required: true, type: 'text', placeholder: 'Red Cross' },
-          { name: 'role', label: 'Your Role / Title', required: true, type: 'text', placeholder: 'Volunteer Coordinator' },
-          { name: 'hours', label: 'Total Volunteer Hours', required: true, type: 'number', placeholder: '200' },
-          { name: 'project', label: 'Project / Initiative Name', required: true, type: 'text', placeholder: 'Clean Water Drive' },
-          { name: 'impact', label: 'Impact / Results (brief)', required: true, type: 'text', placeholder: 'Provided clean water to 500 families' },
-          { name: 'address', label: 'Your Address', required: true, type: 'text', placeholder: '456 Oak St, City' }
+          { name: 'organization', label: 'Organization / NGO', required: true, type: 'text', placeholder: 'Red Cross', step: 2 },
+          { name: 'role', label: 'Your Role / Title', required: true, type: 'text', placeholder: 'Volunteer Coordinator', step: 2 },
+          { name: 'hours', label: 'Total Volunteer Hours', required: true, type: 'number', placeholder: '200', step: 2 },
+          { name: 'project', label: 'Project / Initiative Name', required: true, type: 'text', placeholder: 'Clean Water Drive', step: 2 },
+          { name: 'impact', label: 'Impact / Results (brief)', required: true, type: 'text', placeholder: 'Provided clean water to 500 families', step: 2 }
         ],
         training: [
-          { name: 'fullName', label: 'Full Name', required: true, type: 'text', placeholder: 'e.g. David Lee' },
-          { name: 'email', label: 'Email Address', required: true, type: 'email', placeholder: 'david@training.com' },
-          { name: 'phone', label: 'Phone Number', required: true, type: 'tel', placeholder: '+1 321 654 987' },
-          { name: 'dob', label: 'Date of Birth', required: true, type: 'date' },
-          { name: 'program', label: 'Training Program Name', required: true, type: 'text', placeholder: 'Advanced Data Science' },
-          { name: 'provider', label: 'Training Provider / Institute', required: true, type: 'text', placeholder: 'Coursera' },
-          { name: 'startDate', label: 'Start Date', required: true, type: 'date' },
-          { name: 'completionDate', label: 'Completion Date', required: true, type: 'date' },
-          { name: 'duration', label: 'Duration (weeks)', required: true, type: 'number', placeholder: '12' },
-          { name: 'certification', label: 'Certification Earned (if any)', required: false, type: 'text', placeholder: 'Python for Data Science' }
+          { name: 'program', label: 'Training Program Name', required: true, type: 'text', placeholder: 'Advanced Data Science', step: 2 },
+          { name: 'provider', label: 'Training Provider / Institute', required: true, type: 'text', placeholder: 'Coursera', step: 2 },
+          { name: 'startDate', label: 'Start Date', required: true, type: 'date', step: 2 },
+          { name: 'completionDate', label: 'Completion Date', required: true, type: 'date', step: 2 },
+          { name: 'duration', label: 'Duration (weeks)', required: true, type: 'number', placeholder: '12', step: 2 },
+          { name: 'certification', label: 'Certification Earned (if any)', required: false, type: 'text', placeholder: 'Python for Data Science', step: 2 }
         ]
       };
 
-      const fields = fieldSets[type] || fieldSets.academic;
+      // Combine base + type-specific
+      let allFields = [...baseFields];
+      const specific = typeSpecific[type] || typeSpecific.academic;
+      allFields = allFields.concat(specific);
 
-      // Build form
-      fields.forEach(f => {
-        const div = document.createElement('div');
-        div.className = 'form-group';
-        const label = document.createElement('label');
-        label.setAttribute('for', f.name);
-        label.textContent = f.label + (f.required ? ' *' : '');
-        const input = document.createElement('input');
-        input.type = f.type;
-        input.id = f.name;
-        input.name = f.name;
-        if (f.required) input.required = true;
-        if (f.placeholder) input.placeholder = f.placeholder;
-        input.className = 'form-control';
-        div.appendChild(label);
-        div.appendChild(input);
-        fieldsContainer.appendChild(div);
+      // Separate by step
+      const step1Fields = allFields.filter(f => f.step === 1);
+      const step2Fields = allFields.filter(f => f.step === 2);
+
+      // Render fields into steps
+      function renderFields(containerId, fields) {
+        const container = document.getElementById(containerId);
+        container.innerHTML = '';
+        fields.forEach(f => {
+          const div = document.createElement('div');
+          div.className = 'form-group';
+          const label = document.createElement('label');
+          label.setAttribute('for', f.name);
+          label.textContent = f.label + (f.required ? ' *' : '');
+          let input;
+          if (f.type === 'select') {
+            input = document.createElement('select');
+            input.id = f.name;
+            input.name = f.name;
+            if (f.required) input.required = true;
+            input.className = 'form-control';
+            f.options.forEach(opt => {
+              const option = document.createElement('option');
+              option.value = opt;
+              option.textContent = opt;
+              input.appendChild(option);
+            });
+          } else {
+            input = document.createElement('input');
+            input.type = f.type;
+            input.id = f.name;
+            input.name = f.name;
+            if (f.required) input.required = true;
+            if (f.placeholder) input.placeholder = f.placeholder;
+            input.className = 'form-control';
+          }
+          div.appendChild(label);
+          div.appendChild(input);
+          container.appendChild(div);
+        });
+      }
+
+      renderFields('step1Fields', step1Fields);
+      renderFields('step2Fields', step2Fields);
+
+      // ---------- Step navigation ----------
+      let currentStep = 1;
+      const totalSteps = 3;
+      const step1Div = document.getElementById('step1');
+      const step2Div = document.getElementById('step2');
+      const step3Div = document.getElementById('step3');
+      const indicators = {
+        1: document.getElementById('stepIndicator1'),
+        2: document.getElementById('stepIndicator2'),
+        3: document.getElementById('stepIndicator3')
+      };
+
+      function showStep(step) {
+        step1Div.style.display = step === 1 ? 'block' : 'none';
+        step2Div.style.display = step === 2 ? 'block' : 'none';
+        step3Div.style.display = step === 3 ? 'block' : 'none';
+        // Update indicators
+        for (let i = 1; i <= 3; i++) {
+          indicators[i].classList.toggle('active-step', i === step);
+        }
+        currentStep = step;
+        // Scroll to top of form
+        document.querySelector('.form-section').scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }
+
+      // Next buttons
+      document.querySelectorAll('.next-step').forEach(btn => {
+        btn.addEventListener('click', function() {
+          // Validate current step fields
+          const currentDiv = currentStep === 1 ? step1Div : step2Div;
+          const inputs = currentDiv.querySelectorAll('input[required], select[required]');
+          let valid = true;
+          inputs.forEach(inp => {
+            if (!inp.value.trim()) {
+              valid = false;
+              inp.style.borderColor = '#ef4444';
+            } else {
+              inp.style.borderColor = '';
+            }
+          });
+          if (!valid) {
+            alert('Please fill in all required fields in this section.');
+            return;
+          }
+          // If step 2, also validate email if present
+          const emailInput = document.getElementById('email');
+          if (emailInput && emailInput.value) {
+            const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+            if (!emailPattern.test(emailInput.value)) {
+              emailInput.style.borderColor = '#ef4444';
+              alert('Please enter a valid email address.');
+              return;
+            }
+          }
+          if (currentStep < totalSteps) {
+            if (currentStep === 2) {
+              // Move to step 3 (review)
+              showStep(3);
+              generateReview();
+            } else {
+              showStep(currentStep + 1);
+            }
+          }
+        });
       });
 
-      // Reference number generator
+      // Previous buttons
+      document.querySelectorAll('.prev-step').forEach(btn => {
+        btn.addEventListener('click', function() {
+          if (currentStep > 1) showStep(currentStep - 1);
+        });
+      });
+
+      // ---------- Review generation ----------
+      function generateReview() {
+        const container = document.getElementById('reviewContainer');
+        let html = '<dl style="display:grid; grid-template-columns:1fr 2fr; gap:8px;">';
+        allFields.forEach(f => {
+          const el = document.getElementById(f.name);
+          if (el) {
+            const val = el.value ? el.value.trim() : 'Not provided';
+            html += `<dt><strong>${f.label}</strong></dt><dd>${val}</dd>`;
+          }
+        });
+        html += '</dl>';
+        container.innerHTML = html;
+      }
+
+      // ---------- Submit ----------
+      document.getElementById('applyForm').addEventListener('submit', async function(e) {
+        e.preventDefault();
+
+        // Disable submit button to prevent double submission
+        const submitBtn = document.getElementById('submitBtn');
+        submitBtn.disabled = true;
+        submitBtn.textContent = 'Submitting...';
+
+        // Show spinner
+        const progressContainer = document.getElementById('progressContainer');
+        const progressBar = document.getElementById('progressBar');
+        const progressText = document.getElementById('progressText');
+        progressContainer.style.display = 'block';
+        progressBar.style.width = '0%';
+        progressText.textContent = 'Processing your application...';
+
+        // Gather data
+        const data = { type };
+        allFields.forEach(f => {
+          const el = document.getElementById(f.name);
+          if (el) data[f.name] = el.value.trim();
+        });
+
+        const ref = generateRef();
+        data.referenceNumber = ref;
+        data.status = 'pending';
+        data.submissionDate = new Date().toISOString().split('T')[0];
+        data.certificateNumber = '';
+
+        try {
+          // Save to localStorage
+          progressBar.style.width = '30%';
+          progressText.textContent = 'Saving application...';
+          let apps = JSON.parse(localStorage.getItem('applications') || '[]');
+          apps.push(data);
+          localStorage.setItem('applications', JSON.stringify(apps));
+
+          progressBar.style.width = '60%';
+          progressText.textContent = 'Generating receipt PDF...';
+
+          // Generate receipt PDF with margins
+          const { jsPDF } = window.jspdf;
+          const doc = new jsPDF();
+          const margin = 20;
+          const pageWidth = doc.internal.pageSize.getWidth();
+          const pageHeight = doc.internal.pageSize.getHeight();
+
+          // Header
+          doc.setFontSize(18);
+          doc.setTextColor(0, 0, 0);
+          doc.text('ACKNOWLEDGEMENT RECEIPT', pageWidth/2, margin+10, { align: 'center' });
+          doc.setLineWidth(0.5);
+          doc.line(margin, margin+15, pageWidth-margin, margin+15);
+
+          // Content
+          let y = margin + 25;
+          doc.setFontSize(12);
+          doc.text(`Reference Number: ${data.referenceNumber}`, margin, y);
+          y += 8;
+          doc.text(`Date: ${data.submissionDate}`, margin, y);
+          y += 12;
+          doc.text(`To,`, margin, y);
+          y += 8;
+          doc.text(`${data.fullName || 'N/A'}`, margin, y);
+          y += 6;
+          doc.text(`Certificate Type: ${typeNames[type] || type}`, margin, y);
+          y += 10;
+          doc.text(`This is to acknowledge that your application for the ${typeNames[type] || type} certificate`, margin, y);
+          y += 7;
+          doc.text(`has been successfully submitted and is currently under review.`, margin, y);
+          y += 12;
+          doc.text(`We will notify you once the review is complete.`, margin, y);
+          y += 8;
+          doc.text(`Thank you for using CertifyHub.`, margin, y);
+
+          // Footer
+          const footerY = pageHeight - margin - 10;
+          doc.setFontSize(10);
+          doc.text('This is a system-generated receipt. No signature required.', pageWidth/2, footerY, { align: 'center' });
+
+          progressBar.style.width = '80%';
+          progressText.textContent = 'Downloading receipt...';
+
+          const pdfBlob = doc.output('blob');
+          const url = URL.createObjectURL(pdfBlob);
+          const link = document.createElement('a');
+          link.href = url;
+          link.download = `acknowledgement-${data.referenceNumber}.pdf`;
+          document.body.appendChild(link);
+          link.click();
+          document.body.removeChild(link);
+          URL.revokeObjectURL(url);
+
+          progressBar.style.width = '100%';
+          progressText.textContent = 'Done!';
+
+          // Show success
+          const successDiv = document.getElementById('successMessage');
+          successDiv.textContent = `✅ Application submitted successfully! Reference: ${data.referenceNumber}. Receipt downloaded.`;
+          successDiv.style.display = 'block';
+
+          // Reset form
+          setTimeout(() => {
+            progressContainer.style.display = 'none';
+            submitBtn.disabled = false;
+            submitBtn.textContent = 'Submit Application';
+            this.reset();
+            // Reset to step 1
+            showStep(1);
+          }, 2000);
+
+        } catch (err) {
+          console.error(err);
+          const errorDiv = document.getElementById('errorMessage');
+          errorDiv.textContent = 'Error: ' + (err.message || 'Unknown error. Please try again.');
+          errorDiv.style.display = 'block';
+          progressContainer.style.display = 'none';
+          submitBtn.disabled = false;
+          submitBtn.textContent = 'Submit Application';
+        }
+      });
+
+      // ---------- Helpers ----------
       function generateRef() {
         const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
         let ref = 'REF-';
@@ -155,134 +472,8 @@
         return ref;
       }
 
-      // Submit handler - Frontend-only (saves to localStorage)
-      document.getElementById('applyForm').addEventListener('submit', async function(e) {
-        e.preventDefault();
-        
-        // Clear previous messages
-        const errorDiv = document.getElementById('errorMessage');
-        const successDiv = document.getElementById('successMessage');
-        errorDiv.style.display = 'none';
-        successDiv.style.display = 'none';
-        errorDiv.textContent = '';
-
-        // Validate required fields
-        const inputs = this.querySelectorAll('input[required]');
-        let valid = true;
-        inputs.forEach(inp => {
-          if (!inp.value.trim()) { 
-            valid = false; 
-            inp.style.borderColor = '#ef4444';
-          } else {
-            inp.style.borderColor = '';
-          }
-        });
-        const emailInput = document.getElementById('email');
-        if (emailInput && emailInput.value) {
-          const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-          if (!emailPattern.test(emailInput.value)) { 
-            valid = false; 
-            emailInput.style.borderColor = '#ef4444';
-            alert('Please enter a valid email address.');
-          }
-        }
-        if (!valid) {
-          alert('Please fill in all required fields.');
-          return;
-        }
-
-        // Gather data
-        const data = { type };
-        fields.forEach(f => {
-          const el = document.getElementById(f.name);
-          if (el) data[f.name] = el.value.trim();
-        });
-        
-        const ref = generateRef();
-        data.referenceNumber = ref;
-        data.status = 'pending';
-        data.submissionDate = new Date().toISOString().split('T')[0];
-        data.certificateNumber = '';
-
-        const progressContainer = document.getElementById('progressContainer');
-        const progressBar = document.getElementById('progressBar');
-        const progressText = document.getElementById('progressText');
-        progressContainer.style.display = 'block';
-        progressBar.style.width = '0%';
-        progressText.textContent = 'Processing application...';
-
-        try {
-          // 1. Save to localStorage (frontend-only)
-          progressBar.style.width = '30%';
-          progressText.textContent = 'Saving application...';
-
-          // Get existing applications from localStorage
-          let apps = JSON.parse(localStorage.getItem('applications') || '[]');
-          apps.push(data);
-          localStorage.setItem('applications', JSON.stringify(apps));
-
-          progressBar.style.width = '60%';
-          progressText.textContent = 'Generating receipt PDF...';
-
-          // 2. Generate receipt PDF
-          const { jsPDF } = window.jspdf;
-          const doc = new jsPDF();
-          doc.setFontSize(16);
-          doc.text('Certificate Application Receipt', 20, 30);
-          doc.setFontSize(12);
-          doc.text(`Reference Number: ${data.referenceNumber}`, 20, 50);
-          doc.text(`Applicant: ${data.fullName || 'N/A'}`, 20, 60);
-          doc.text(`Certificate Type: ${typeNames[type] || type}`, 20, 70);
-          doc.text(`Submission Date: ${data.submissionDate}`, 20, 80);
-          doc.text('Status: Pending', 20, 90);
-          doc.text('Thank you for your application. You will be notified once reviewed.', 20, 110);
-
-          progressBar.style.width = '80%';
-          progressText.textContent = 'Downloading receipt...';
-
-          // 3. Download PDF
-          const pdfBlob = doc.output('blob');
-          const url = URL.createObjectURL(pdfBlob);
-          const link = document.createElement('a');
-          link.href = url;
-          link.download = `receipt-${data.referenceNumber}.pdf`;
-          document.body.appendChild(link);
-          link.click();
-          document.body.removeChild(link);
-          URL.revokeObjectURL(url);
-
-          progressBar.style.width = '100%';
-          progressText.textContent = 'Done! Receipt downloaded.';
-
-          // Show success message
-          successDiv.textContent = `✅ Application submitted successfully! Reference: ${data.referenceNumber}`;
-          successDiv.style.display = 'block';
-
-          setTimeout(() => { 
-            progressContainer.style.display = 'none'; 
-            this.reset();
-          }, 2000);
-
-          // Also try to send to server (if available)
-          try {
-            await fetch('/api/applications', {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify(data)
-            });
-            console.log('✅ Also saved to server (if available)');
-          } catch (serverErr) {
-            console.log('ℹ️ Server not available – saved locally only');
-            // Don't show error – localStorage already saved it
-          }
-
-        } catch (err) {
-          console.error('Submission error:', err);
-          errorDiv.textContent = 'Error: ' + (err.message || 'Unknown error. Please try again.');
-          errorDiv.style.display = 'block';
-          progressContainer.style.display = 'none';
-        }
-      });
+      // Initial step
+      showStep(1);
     });
   </script>
 </body>
