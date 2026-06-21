@@ -8,7 +8,6 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 </head>
 <body>
-  <!-- Navigation (same) -->
   <nav class="navbar">
     <div class="nav-container">
       <a href="index.html" class="nav-logo">CertifyHub</a>
@@ -64,11 +63,10 @@
           </div>
         </div>
 
-        <!-- Spinner -->
         <div id="progressContainer" style="display:none; margin-top:20px;">
           <div style="display:flex; align-items:center; gap:16px; justify-content:center;">
             <div class="spinner"></div>
-            <p id="progressText" style="color:#475569; font-weight:500;">Submitting your application...</p>
+            <p id="progressText" style="color:#475569; font-weight:500;">Submitting...</p>
           </div>
           <div style="background:#e2e8f0; border-radius:8px; height:6px; margin-top:12px; overflow:hidden;">
             <div id="progressBar" style="width:0%; height:100%; background:#0f172a; transition:width 0.5s;"></div>
@@ -104,7 +102,6 @@
       const params = new URLSearchParams(window.location.search);
       const type = params.get('type') || 'academic';
       const typeDisplay = document.getElementById('certTypeDisplay');
-
       const typeNames = {
         academic: 'Academic Excellence',
         professional: 'Professional Achievement',
@@ -118,62 +115,68 @@
       };
       typeDisplay.textContent = `Certificate Type: ${typeNames[type] || type}`;
 
-      // Base fields (step 1)
-      const baseFields = [
-        { name: 'fullName', label: 'Full Name', required: true, type: 'text', placeholder: 'e.g. John Doe', step: 1 },
-        { name: 'email', label: 'Email Address', required: true, type: 'email', placeholder: 'john@example.com', step: 1 },
-        { name: 'phone', label: 'Phone Number', required: true, type: 'tel', placeholder: '+1 234 567 890', step: 1 },
-        { name: 'dob', label: 'Date of Birth', required: true, type: 'date', step: 1 },
-        { name: 'gender', label: 'Gender', required: true, type: 'select', options: ['Male', 'Female', 'Other'], step: 1 },
-        { name: 'nationality', label: 'Nationality', required: true, type: 'text', placeholder: 'e.g. American', step: 1 },
-        { name: 'residentialAddress', label: 'Residential Address', required: true, type: 'text', placeholder: '123 Main St, City', step: 1 },
-        { name: 'permanentAddress', label: 'Permanent Address', required: false, type: 'text', placeholder: 'Same as residential or enter', step: 1 },
-        { name: 'otherAddress', label: 'Other Address (optional)', required: false, type: 'text', placeholder: 'Any other address', step: 1 },
-        { name: 'city', label: 'City', required: true, type: 'text', placeholder: 'New York', step: 1 },
-        { name: 'state', label: 'State / Province', required: true, type: 'text', placeholder: 'NY', step: 1 },
-        { name: 'postalCode', label: 'Postal / Zip Code', required: true, type: 'text', placeholder: '10001', step: 1 },
-        // Step 2 (additional)
-        { name: 'emergencyName', label: 'Emergency Contact Name', required: true, type: 'text', placeholder: 'e.g. Jane Doe', step: 2 },
-        { name: 'emergencyPhone', label: 'Emergency Contact Phone', required: true, type: 'tel', placeholder: '+1 987 654 321', step: 2 },
-        { name: 'emergencyRelation', label: 'Relationship', required: true, type: 'text', placeholder: 'Spouse', step: 2 },
-        { name: 'medicalConditions', label: 'Medical Conditions (if any)', required: false, type: 'text', placeholder: 'None', step: 2 },
-        { name: 'specialRequests', label: 'Special Requests / Accommodations', required: false, type: 'text', placeholder: 'Wheelchair access', step: 2 },
-        { name: 'previousCertificate', label: 'Previous Certificate (if any)', required: false, type: 'text', placeholder: 'e.g. Certificate of Completion 2020', step: 2 },
-        { name: 'additionalDocs', label: 'Additional Documents (brief description)', required: false, type: 'text', placeholder: 'Transcript, ID copy', step: 2 }
+      // ---------- New Step 1 fields ----------
+      const step1Fields = [
+        { name: 'fullName', label: 'Full Name', required: true, type: 'text', placeholder: 'e.g. John Doe' },
+        { name: 'fatherName', label: "Father's Name", required: true, type: 'text', placeholder: 'e.g. Robert Doe' },
+        { name: 'motherName', label: "Mother's Name", required: true, type: 'text', placeholder: 'e.g. Mary Doe' },
+        { name: 'village', label: 'Village', required: true, type: 'text', placeholder: 'e.g. Green Valley' },
+        { name: 'po', label: 'Post Office', required: true, type: 'text', placeholder: 'e.g. Green Valley PO' },
+        { name: 'ps', label: 'Police Station', required: true, type: 'text', placeholder: 'e.g. Green Valley PS' },
+        { name: 'mouza', label: 'Mouza', required: true, type: 'text', placeholder: 'e.g. Mouza 123' },
+        { name: 'revenue', label: 'Revenue Circle', required: true, type: 'text', placeholder: 'e.g. Revenue Circle 1' },
+        { name: 'pin', label: 'PIN Code', required: true, type: 'text', placeholder: 'e.g. 123456' },
+        { name: 'subDivision', label: 'Sub Division', required: true, type: 'text', placeholder: 'e.g. North Division' },
+        { name: 'district', label: 'District', required: true, type: 'text', placeholder: 'e.g. Fantasy District' },
+        { name: 'state', label: 'State', required: true, type: 'text', placeholder: 'e.g. Comedy State' }
       ];
 
-      // Type-specific fields (some types have extra fields, others none)
+      // Step 2 fields (emergency, medical, etc.)
+      const step2Fields = [
+        { name: 'email', label: 'Email Address', required: true, type: 'email', placeholder: 'john@example.com' },
+        { name: 'phone', label: 'Phone Number', required: true, type: 'tel', placeholder: '+1 234 567 890' },
+        { name: 'dob', label: 'Date of Birth', required: true, type: 'date' },
+        { name: 'gender', label: 'Gender', required: true, type: 'select', options: ['Male', 'Female', 'Other'] },
+        { name: 'emergencyName', label: 'Emergency Contact Name', required: true, type: 'text', placeholder: 'e.g. Jane Doe' },
+        { name: 'emergencyPhone', label: 'Emergency Contact Phone', required: true, type: 'tel', placeholder: '+1 987 654 321' },
+        { name: 'emergencyRelation', label: 'Relationship', required: true, type: 'text', placeholder: 'Spouse' },
+        { name: 'medicalConditions', label: 'Medical Conditions (if any)', required: false, type: 'text', placeholder: 'None' },
+        { name: 'specialRequests', label: 'Special Requests / Accommodations', required: false, type: 'text', placeholder: 'Wheelchair access' },
+        { name: 'previousCertificate', label: 'Previous Certificate (if any)', required: false, type: 'text', placeholder: 'e.g. Certificate of Completion 2020' },
+        { name: 'additionalDocs', label: 'Additional Documents (brief description)', required: false, type: 'text', placeholder: 'Transcript, ID copy' }
+      ];
+
+      // Type-specific fields (step 2)
       const typeSpecific = {
         academic: [
-          { name: 'institution', label: 'Institution / University', required: true, type: 'text', placeholder: 'Harvard University', step: 2 },
-          { name: 'gpa', label: 'GPA (out of 4.0)', required: false, type: 'text', placeholder: '3.8', step: 2 },
-          { name: 'major', label: 'Major / Field of Study', required: true, type: 'text', placeholder: 'Computer Science', step: 2 },
-          { name: 'graduationYear', label: 'Year of Graduation', required: true, type: 'number', placeholder: '2025', step: 2 },
-          { name: 'additional', label: 'Additional Notes (optional)', required: false, type: 'text', placeholder: 'Any other info', step: 2 }
+          { name: 'institution', label: 'Institution / University', required: true, type: 'text', placeholder: 'Harvard University' },
+          { name: 'gpa', label: 'GPA (out of 4.0)', required: false, type: 'text', placeholder: '3.8' },
+          { name: 'major', label: 'Major / Field of Study', required: true, type: 'text', placeholder: 'Computer Science' },
+          { name: 'graduationYear', label: 'Year of Graduation', required: true, type: 'number', placeholder: '2025' },
+          { name: 'additional', label: 'Additional Notes (optional)', required: false, type: 'text', placeholder: 'Any other info' }
         ],
         professional: [
-          { name: 'company', label: 'Company / Organization', required: true, type: 'text', placeholder: 'Google Inc.', step: 2 },
-          { name: 'position', label: 'Job Title / Position', required: true, type: 'text', placeholder: 'Senior Developer', step: 2 },
-          { name: 'yearsOfExperience', label: 'Years of Experience', required: true, type: 'number', placeholder: '5', step: 2 },
-          { name: 'industry', label: 'Industry / Sector', required: true, type: 'text', placeholder: 'Technology', step: 2 },
-          { name: 'achievements', label: 'Key Achievements (brief)', required: true, type: 'text', placeholder: 'Led team to deliver X project', step: 2 }
+          { name: 'company', label: 'Company / Organization', required: true, type: 'text', placeholder: 'Google Inc.' },
+          { name: 'position', label: 'Job Title / Position', required: true, type: 'text', placeholder: 'Senior Developer' },
+          { name: 'yearsOfExperience', label: 'Years of Experience', required: true, type: 'number', placeholder: '5' },
+          { name: 'industry', label: 'Industry / Sector', required: true, type: 'text', placeholder: 'Technology' },
+          { name: 'achievements', label: 'Key Achievements (brief)', required: true, type: 'text', placeholder: 'Led team to deliver X project' }
         ],
         community: [
-          { name: 'organization', label: 'Organization / NGO', required: true, type: 'text', placeholder: 'Red Cross', step: 2 },
-          { name: 'role', label: 'Your Role / Title', required: true, type: 'text', placeholder: 'Volunteer Coordinator', step: 2 },
-          { name: 'hours', label: 'Total Volunteer Hours', required: true, type: 'number', placeholder: '200', step: 2 },
-          { name: 'project', label: 'Project / Initiative Name', required: true, type: 'text', placeholder: 'Clean Water Drive', step: 2 },
-          { name: 'impact', label: 'Impact / Results (brief)', required: true, type: 'text', placeholder: 'Provided clean water to 500 families', step: 2 }
+          { name: 'organization', label: 'Organization / NGO', required: true, type: 'text', placeholder: 'Red Cross' },
+          { name: 'role', label: 'Your Role / Title', required: true, type: 'text', placeholder: 'Volunteer Coordinator' },
+          { name: 'hours', label: 'Total Volunteer Hours', required: true, type: 'number', placeholder: '200' },
+          { name: 'project', label: 'Project / Initiative Name', required: true, type: 'text', placeholder: 'Clean Water Drive' },
+          { name: 'impact', label: 'Impact / Results (brief)', required: true, type: 'text', placeholder: 'Provided clean water to 500 families' }
         ],
         training: [
-          { name: 'program', label: 'Training Program Name', required: true, type: 'text', placeholder: 'Advanced Data Science', step: 2 },
-          { name: 'provider', label: 'Training Provider / Institute', required: true, type: 'text', placeholder: 'Coursera', step: 2 },
-          { name: 'startDate', label: 'Start Date', required: true, type: 'date', step: 2 },
-          { name: 'completionDate', label: 'Completion Date', required: true, type: 'date', step: 2 },
-          { name: 'duration', label: 'Duration (weeks)', required: true, type: 'number', placeholder: '12', step: 2 },
-          { name: 'certification', label: 'Certification Earned (if any)', required: false, type: 'text', placeholder: 'Python for Data Science', step: 2 }
+          { name: 'program', label: 'Training Program Name', required: true, type: 'text', placeholder: 'Advanced Data Science' },
+          { name: 'provider', label: 'Training Provider / Institute', required: true, type: 'text', placeholder: 'Coursera' },
+          { name: 'startDate', label: 'Start Date', required: true, type: 'date' },
+          { name: 'completionDate', label: 'Completion Date', required: true, type: 'date' },
+          { name: 'duration', label: 'Duration (weeks)', required: true, type: 'number', placeholder: '12' },
+          { name: 'certification', label: 'Certification Earned (if any)', required: false, type: 'text', placeholder: 'Python for Data Science' }
         ],
-        // New types have no extra fields
         billionaire: [],
         millionaire: [],
         trillionaire: [],
@@ -181,10 +184,10 @@
         coaching: []
       };
 
-      const allFields = [...baseFields, ...(typeSpecific[type] || [])];
-      const step1Fields = allFields.filter(f => f.step === 1);
-      const step2Fields = allFields.filter(f => f.step === 2);
+      // Combine all fields (step1 + step2 + type-specific)
+      const allFields = [...step1Fields, ...step2Fields, ...(typeSpecific[type] || [])];
 
+      // Build step 1
       function renderFields(containerId, fields) {
         const container = document.getElementById(containerId);
         container.innerHTML = '';
@@ -223,7 +226,7 @@
       }
 
       renderFields('step1Fields', step1Fields);
-      renderFields('step2Fields', step2Fields);
+      renderFields('step2Fields', [...step2Fields, ...(typeSpecific[type] || [])]);
 
       // ---- Step navigation (same as before) ----
       let currentStep = 1;
@@ -258,15 +261,6 @@
             else inp.style.borderColor = '';
           });
           if (!valid) { alert('Please fill in all required fields in this section.'); return; }
-          const emailInput = document.getElementById('email');
-          if (emailInput && emailInput.value) {
-            const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-            if (!emailPattern.test(emailInput.value)) {
-              emailInput.style.borderColor = '#ef4444';
-              alert('Please enter a valid email address.');
-              return;
-            }
-          }
           if (currentStep < totalSteps) {
             if (currentStep === 2) {
               showStep(3);
