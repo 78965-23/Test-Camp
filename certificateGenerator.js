@@ -1,4 +1,4 @@
-// certificateGenerator.js – Professional PDF with two formats
+// certificateGenerator.js – uses new address fields, auto Place = "Fantasy, Comedy Nagar"
 function generateCertificatePDF(app, fileNamePrefix) {
   if (!app) return;
 
@@ -9,24 +9,30 @@ function generateCertificatePDF(app, fileNamePrefix) {
   const pageHeight = doc.internal.pageSize.getHeight();
   const center = pageWidth / 2;
 
-  // ---------- Decide format based on type ----------
+  // Determine format
   const completionTypes = ['academic', 'training', 'coaching'];
   const isCompletion = completionTypes.includes(app.type);
 
-  // ---------- Helper to add a line with underline ----------
-  function addField(label, value, x, y, labelWidth) {
-    doc.setFontSize(11);
-    doc.setFont('times', 'normal');
-    const labelStr = label + ': ';
-    doc.text(labelStr, x, y);
-    const textX = x + doc.getStringUnitWidth(labelStr) * 11 / doc.internal.scaleFactor;
-    doc.setFont('times', 'bold');
-    const val = value || '___________________';
-    doc.text(val, textX, y);
-    const valWidth = doc.getStringUnitWidth(val) * 11 / doc.internal.scaleFactor;
-    doc.line(textX, y + 0.5, textX + valWidth, y + 0.5);
-    return y + 8;
-  }
+  // Build full address from new fields
+  const addressParts = [
+    app.village,
+    app.po,
+    app.ps,
+    app.mouza,
+    app.revenue,
+    app.pin,
+    app.subDivision,
+    app.district,
+    app.state
+  ].filter(Boolean);
+  const fullAddress = addressParts.join(', ') || 'N/A';
+
+  // Auto Place
+  const place = 'Fantasy, Comedy Nagar';
+  const date = app.submissionDate || new Date().toISOString().split('T')[0];
+  const signature = '_________________________';
+  const name = app.fullName || 'N/A';
+  const father = app.fatherName || 'N/A';
 
   // ---------- Draw border ----------
   doc.setDrawColor(0);
@@ -49,7 +55,7 @@ function generateCertificatePDF(app, fileNamePrefix) {
   if (isCompletion) {
     // ----- Certificate of Completion -----
     const lines = [
-      `This is to certify that Mr./Ms. ${app.fullName || '_________________________'}`,
+      `This is to certify that Mr./Ms. ${name}`,
       `has successfully completed the ${app.type || '_________________________'} Programme`,
       `conducted by ${app.organization || app.institution || app.provider || '_________________________'}`,
       `from ${app.startDate || '______________'} to ${app.completionDate || '______________'}.`,
@@ -73,8 +79,6 @@ function generateCertificatePDF(app, fileNamePrefix) {
     y += 6;
 
     // ----- Place & Date -----
-    const place = app.city || app.address || '______________';
-    const date = app.submissionDate || new Date().toISOString().split('T')[0];
     doc.text(`Date: ${date}`, margin + 10, y);
     doc.text(`Place: ${place}`, pageWidth - margin - 40, y);
     y += 18;
@@ -84,7 +88,7 @@ function generateCertificatePDF(app, fileNamePrefix) {
     doc.text('Authorized Signatory', center, y, { align: 'center' });
     y += 6;
     doc.setFont('times', 'normal');
-    doc.text('_________________________', center, y, { align: 'center' });
+    doc.text(signature, center, y, { align: 'center' });
     y += 8;
     doc.setFont('times', 'bold');
     doc.text('Organization / Institution Name', center, y, { align: 'center' });
@@ -93,15 +97,11 @@ function generateCertificatePDF(app, fileNamePrefix) {
     doc.text('(Official Seal)', center, y, { align: 'center' });
 
   } else {
-    // ----- Character Certificate (for professional, community, wealth, expert) -----
-    const fullName = app.fullName || '_________________________';
-    const fatherName = '_________________________'; // we don't have this field
-    const address = app.residentialAddress || app.address || '_________________________';
-
+    // ----- Character Certificate (sworn/declare) -----
     const lines = [
-      `This is to certify that Mr./Ms. ${fullName},`,
-      `son/daughter of ${fatherName},`,
-      `resident of ${address},`,
+      `This is to certify that Mr./Ms. ${name},`,
+      `son/daughter of ${father},`,
+      `resident of ${fullAddress},`,
       'is known to me and the particulars furnished by him/her have been',
       'verified and found correct to the best of my knowledge and belief.',
       '',
@@ -121,8 +121,6 @@ function generateCertificatePDF(app, fileNamePrefix) {
     y += 8;
 
     // ----- Place & Date -----
-    const place = app.city || app.address || '______________';
-    const date = app.submissionDate || new Date().toISOString().split('T')[0];
     doc.text(`Place: ${place}`, margin + 10, y);
     doc.text(`Date: ${date}`, pageWidth - margin - 40, y);
     y += 20;
@@ -130,7 +128,7 @@ function generateCertificatePDF(app, fileNamePrefix) {
     // ----- Signature, Name, Designation, Seal -----
     doc.text('Signature: _________________________', margin + 10, y);
     y += 12;
-    doc.text(`Name: ${app.fullName || '_________________________'}`, margin + 10, y);
+    doc.text(`Name: ${name}`, margin + 10, y);
     y += 12;
     doc.text('Designation: _________________________', margin + 10, y);
     y += 12;
