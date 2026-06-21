@@ -25,8 +25,8 @@
 
   <section class="form-section">
     <div class="container">
-      <h2>Apply for Certificate</h2>
-      <p id="certTypeDisplay" style="font-weight:500; color:#475569;"></p>
+      <h2>Apply for Community Certificate</h2>
+      <p style="font-weight:500; color:#475569;">Please fill all required details carefully.</p>
 
       <div style="display:flex; gap:12px; margin-bottom:30px; justify-content:center;">
         <span id="stepIndicator1" class="step-badge active-step">1. Personal</span>
@@ -35,12 +35,14 @@
       </div>
 
       <form id="applyForm" novalidate>
+        <!-- Step 1 -->
         <div id="step1" class="form-step">
           <h3 style="margin-bottom:20px;">Personal &amp; Address Details</h3>
           <div id="step1Fields"></div>
           <button type="button" class="btn btn-primary next-step">Next →</button>
         </div>
 
+        <!-- Step 2 -->
         <div id="step2" class="form-step" style="display:none;">
           <h3 style="margin-bottom:20px;">Additional Details</h3>
           <div id="step2Fields"></div>
@@ -50,6 +52,7 @@
           </div>
         </div>
 
+        <!-- Step 3 -->
         <div id="step3" class="form-step" style="display:none;">
           <h3 style="margin-bottom:20px;">Review Your Application</h3>
           <div id="reviewContainer" style="background:#f8fafc; padding:1.5rem; border-radius:12px; border:1px solid #e2e8f0; margin-bottom:20px; max-height:400px; overflow-y:auto;"></div>
@@ -95,95 +98,39 @@
   <script src="script.js"></script>
   <script>
     document.addEventListener('DOMContentLoaded', function() {
-      const params = new URLSearchParams(window.location.search);
-      const type = params.get('type') || 'academic';
+      // We'll force type = 'community' for this page
+      const type = 'community';
       const typeDisplay = document.getElementById('certTypeDisplay');
-      const typeNames = {
-        academic: 'Academic Excellence',
-        professional: 'Professional Achievement',
-        community: 'Community Certificate',   // changed to Community Certificate
-        training: 'Training Program',
-        billionaire: 'Billionaire Cert',
-        millionaire: 'Millionaire Cert',
-        trillionaire: 'Trillionaire Cert',
-        mathexpert: 'Math Expert Cert',
-        coaching: 'Coaching Registration'
-      };
-      typeDisplay.textContent = `Certificate Type: ${typeNames[type] || type}`;
+      typeDisplay.textContent = 'Community Certificate';
 
       // ---------- Step 1: Personal & Address ----------
       const step1Fields = [
-        { name: 'fullName', label: 'Full Name', required: true, type: 'text', placeholder: 'e.g. John Doe' },
-        { name: 'fatherName', label: "Father's Name", required: true, type: 'text', placeholder: 'e.g. Robert Doe' },
-        { name: 'motherName', label: "Mother's Name", required: true, type: 'text', placeholder: 'e.g. Mary Doe' },
-        { name: 'village', label: 'Village', required: true, type: 'text', placeholder: 'e.g. Green Valley' },
-        { name: 'po', label: 'Post Office', required: true, type: 'text', placeholder: 'e.g. Green Valley PO' },
-        { name: 'ps', label: 'Police Station', required: true, type: 'text', placeholder: 'e.g. Green Valley PS' },
-        { name: 'mouza', label: 'Mouza', required: true, type: 'text', placeholder: 'e.g. Mouza 123' },
-        { name: 'revenue', label: 'Revenue Circle', required: true, type: 'text', placeholder: 'e.g. Revenue Circle 1' },
-        { name: 'pin', label: 'PIN Code', required: true, type: 'text', placeholder: 'e.g. 123456' },
-        { name: 'subDivision', label: 'Sub Division', required: true, type: 'text', placeholder: 'e.g. North Division' },
-        { name: 'district', label: 'District', required: true, type: 'text', placeholder: 'e.g. Fantasy District' },
-        { name: 'state', label: 'State', required: true, type: 'text', placeholder: 'e.g. Comedy State' }
+        { name: 'fullName', label: 'Full Name', required: true, type: 'text', placeholder: 'e.g. Yadav Subba' },
+        { name: 'fatherName', label: "Father's Name", required: true, type: 'text', placeholder: 'e.g. Ram Bahadur Subba' },
+        { name: 'motherName', label: "Mother's Name", required: true, type: 'text', placeholder: 'e.g. Maya Subba' },
+        { name: 'dob', label: 'Date of Birth', required: true, type: 'date' },
+        { name: 'village', label: 'Village', required: true, type: 'text', placeholder: 'e.g. Example Village' },
+        { name: 'po', label: 'Post Office', required: true, type: 'text', placeholder: 'e.g. Example Post Office' },
+        { name: 'ps', label: 'Police Station', required: true, type: 'text', placeholder: 'e.g. Example Police Station' },
+        { name: 'mouza', label: 'Mouza', required: true, type: 'text', placeholder: 'e.g. Example Mouza' },
+        { name: 'pin', label: 'PIN Code', required: true, type: 'text', placeholder: 'e.g. 781001' },
+        { name: 'revenue', label: 'Revenue Circle', required: true, type: 'text', placeholder: 'e.g. Example Revenue Circle' },
+        { name: 'subDivision', label: 'Sub‑Division', required: true, type: 'text', placeholder: 'e.g. Example Sub-Division' },
+        { name: 'district', label: 'District', required: true, type: 'text', placeholder: 'e.g. Example District' },
+        { name: 'state', label: 'State', required: true, type: 'text', placeholder: 'e.g. Assam' }
       ];
 
-      // Step 2: General additional fields + type-specific + Community caste fields
-      const baseStep2 = [
+      // Step 2: Community-specific fields + contact
+      const step2Fields = [
         { name: 'email', label: 'Email Address', required: true, type: 'email', placeholder: 'john@example.com' },
         { name: 'phone', label: 'Phone Number', required: true, type: 'tel', placeholder: '+1 234 567 890' },
-        { name: 'dob', label: 'Date of Birth', required: true, type: 'date' },
         { name: 'gender', label: 'Gender', required: true, type: 'select', options: ['Male', 'Female', 'Other'] },
-        { name: 'emergencyName', label: 'Emergency Contact Name', required: true, type: 'text', placeholder: 'e.g. Jane Doe' },
-        { name: 'emergencyPhone', label: 'Emergency Contact Phone', required: true, type: 'tel', placeholder: '+1 987 654 321' },
-        { name: 'emergencyRelation', label: 'Relationship', required: true, type: 'text', placeholder: 'Spouse' },
-        { name: 'medicalConditions', label: 'Medical Conditions (if any)', required: false, type: 'text', placeholder: 'None' }
+        { name: 'caste', label: 'Caste', required: true, type: 'text', placeholder: 'e.g. Gorkha' },
+        { name: 'subCaste', label: 'Sub‑Caste', required: true, type: 'text', placeholder: 'e.g. Subba' },
+        { name: 'community', label: 'Community', required: true, type: 'text', placeholder: 'e.g. Gorkha Community' },
+        { name: 'emergencyName', label: 'Emergency Contact Name', required: false, type: 'text', placeholder: 'e.g. Jane Doe' },
+        { name: 'emergencyPhone', label: 'Emergency Contact Phone', required: false, type: 'tel', placeholder: '+1 987 654 321' }
       ];
-
-      // Community-specific caste fields (only for type === 'community')
-      const communityFields = [
-        { name: 'caste', label: 'Caste', required: true, type: 'text', placeholder: 'e.g. OBC, SC, ST, General' },
-        { name: 'subCaste', label: 'Sub‑Caste (if any)', required: false, type: 'text', placeholder: 'e.g. Yadav, Patel' },
-        { name: 'religion', label: 'Religion', required: true, type: 'text', placeholder: 'e.g. Hindu, Muslim, Christian' },
-        { name: 'community', label: 'Community / Group', required: true, type: 'text', placeholder: 'e.g. Linguistic Minority' }
-      ];
-
-      // Type-specific extra fields (non-community)
-      const typeSpecific = {
-        academic: [
-          { name: 'institution', label: 'Institution / University', required: true, type: 'text', placeholder: 'Harvard University' },
-          { name: 'gpa', label: 'GPA (out of 4.0)', required: false, type: 'text', placeholder: '3.8' },
-          { name: 'major', label: 'Major / Field of Study', required: true, type: 'text', placeholder: 'Computer Science' },
-          { name: 'graduationYear', label: 'Year of Graduation', required: true, type: 'number', placeholder: '2025' }
-        ],
-        professional: [
-          { name: 'company', label: 'Company / Organization', required: true, type: 'text', placeholder: 'Google Inc.' },
-          { name: 'position', label: 'Job Title / Position', required: true, type: 'text', placeholder: 'Senior Developer' },
-          { name: 'yearsOfExperience', label: 'Years of Experience', required: true, type: 'number', placeholder: '5' },
-          { name: 'industry', label: 'Industry / Sector', required: true, type: 'text', placeholder: 'Technology' },
-          { name: 'achievements', label: 'Key Achievements (brief)', required: true, type: 'text', placeholder: 'Led team to deliver X project' }
-        ],
-        // community type uses the special communityFields instead of these
-        training: [
-          { name: 'program', label: 'Training Program Name', required: true, type: 'text', placeholder: 'Advanced Data Science' },
-          { name: 'provider', label: 'Training Provider / Institute', required: true, type: 'text', placeholder: 'Coursera' },
-          { name: 'startDate', label: 'Start Date', required: true, type: 'date' },
-          { name: 'completionDate', label: 'Completion Date', required: true, type: 'date' },
-          { name: 'duration', label: 'Duration (weeks)', required: true, type: 'number', placeholder: '12' }
-        ],
-        billionaire: [],
-        millionaire: [],
-        trillionaire: [],
-        mathexpert: [],
-        coaching: []
-      };
-
-      // Build Step 2 fields: base + type-specific + community extra if type === community
-      let step2Fields = [...baseStep2];
-      if (type === 'community') {
-        step2Fields = step2Fields.concat(communityFields);
-      } else {
-        step2Fields = step2Fields.concat(typeSpecific[type] || []);
-      }
 
       const allFields = [...step1Fields, ...step2Fields];
 
@@ -228,7 +175,7 @@
       renderFields('step1Fields', step1Fields);
       renderFields('step2Fields', step2Fields);
 
-      // ---- Step navigation (same as before) ----
+      // ---- Step navigation ----
       let currentStep = 1;
       const totalSteps = 3;
       const step1Div = document.getElementById('step1');
@@ -260,7 +207,7 @@
             if (!inp.value.trim()) { valid = false; inp.style.borderColor = '#ef4444'; }
             else inp.style.borderColor = '';
           });
-          if (!valid) { alert('Please fill in all required fields in this section.'); return; }
+          if (!valid) { alert('Please fill in all required fields.'); return; }
           if (currentStep < totalSteps) {
             if (currentStep === 2) {
               showStep(3);
@@ -293,10 +240,8 @@
       }
 
       // ---- Submit ----
-      // (No change in submit logic, it already saves all fields)
       document.getElementById('applyForm').addEventListener('submit', async function(e) {
         e.preventDefault();
-        // ... same as before, just use allFields to collect data
         const submitBtn = document.getElementById('submitBtn');
         submitBtn.disabled = true;
         submitBtn.textContent = 'Submitting...';
@@ -349,11 +294,11 @@
           y += 12;
           doc.text(`To: ${data.fullName || 'N/A'}`, margin, y);
           y += 8;
-          doc.text(`Certificate: ${typeNames[type] || type}`, margin, y);
+          doc.text('Community Certificate Application', margin, y);
           y += 10;
           doc.text('Your application has been submitted successfully.', margin, y);
           y += 8;
-          doc.text('It is currently under review. You will be notified once processed.', margin, y);
+          doc.text('It will be processed shortly.', margin, y);
 
           const footerY = pageHeight - margin - 10;
           doc.setFontSize(10);
